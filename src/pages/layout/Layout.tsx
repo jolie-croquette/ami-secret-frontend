@@ -1,13 +1,15 @@
-import { Outlet } from 'react-router-dom';
-import Header from '@/pages/layout/Header';
+import Header from './Header'
+import Footer from './Footer'
+import { Outlet } from 'react-router-dom'
 
 export default function Layout() {
   return (
     <>
       <Header />
-      <main className="max-w-screen-xl mx-auto p-6">
+      <main className="">
         <Outlet />
       </main>
+      <Footer />
     </>
-  );
+  )
 }

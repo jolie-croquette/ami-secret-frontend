@@ -1,25 +1,31 @@
 import { createBrowserRouter } from 'react-router-dom';
 import type { RouteObject } from 'react-router-dom';
 import Layout from '@/pages/layout/Layout';
+import AuthPage from '@/pages/AuthPage';
+import PreferencesPage from './pages/PreferencesPage';
 
-const routes: RouteObject[] = [
+const router = createBrowserRouter([
   {
     path: '/',
     element: <Layout />,
     children: [
       {
         index: true,
+        element: <AuthPage />
       }
     ]
   },
   {
-    path: '/connexion',
-  },
-  {
-    path: '/inscription',
+    path: '/onboarding',
+    element: <Layout />,
+    children: [
+      {
+        index: true,
+        element: <PreferencesPage />
+      }
+    ]
   }
-];
 
-const router = createBrowserRouter(routes);
+] as RouteObject[]);
 
 export { router };
