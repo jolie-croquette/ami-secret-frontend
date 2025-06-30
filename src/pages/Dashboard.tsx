@@ -2,7 +2,6 @@ import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { toast } from 'react-toastify';
 
 export default function Dashboard() {
   const authContext = useContext(AuthContext);

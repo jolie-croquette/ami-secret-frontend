@@ -1,6 +1,5 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { AuthContext } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { ToastContainer } from 'react-toastify';
@@ -25,22 +24,6 @@ export default function PreferencesPage() {
   const [animal, setAnimal] = useState('');
   const [errors, setErrors] = useState<{ likes?: boolean; color?: boolean; animal?: boolean }>({});
   const navigate = useNavigate();
-
-  const auth = useContext(AuthContext);
-
-  useEffect(() => {
-    if (auth?.user) {
-      const isAlreadyOnboarded =
-        Array.isArray(auth.user.likes) &&
-        auth.user.likes.length > 0 &&
-        auth.user.color &&
-        auth.user.animal;
-
-      if (isAlreadyOnboarded) {
-        navigate('/dashboard');
-      }
-    }
-  }, [auth?.user, navigate]);
 
   const handleChange = (setter: any, index: number, value: string) => {
     setter((prev: string[]) => {

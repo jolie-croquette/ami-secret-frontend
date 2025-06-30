@@ -7,7 +7,6 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
-import { nav } from 'motion/react-client';
 
 const inputVariants = {
   focus: {
@@ -33,9 +32,6 @@ export default function AuthPage() {
     setIsLogin(!isLogin);
     setForm({ name: '', email: '', password: '' });
   };
-
-  const validateEmail = (email: string) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,7 +190,7 @@ export default function AuthPage() {
             } text-white font-bold text-md tracking-wide shadow-md transition`}
           >
             {isSubmitting ? (
-              <l-waveform size="35" stroke="2.5" speed="1" color="white"></l-waveform>
+              "..."
             ) : (
               isLogin ? "Se connecter" : "Créer un compte"
             )}

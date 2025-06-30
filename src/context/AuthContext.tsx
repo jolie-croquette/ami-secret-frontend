@@ -1,5 +1,4 @@
 import { createContext, useState, ReactNode, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -91,7 +90,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
-    navigate('/');
   };
 
   return (
