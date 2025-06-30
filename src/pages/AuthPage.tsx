@@ -74,10 +74,11 @@ export default function AuthPage() {
       if (isLogin) {
         await auth.login(email, password);
         toast.success("Connexion réussie !");
+        navigate('/dashboard');
       } else {
         await auth.signup(name, email, password);
         toast.success("Compte créé avec succès !");
-        navigate('/onboarding');
+        navigate('/onboard');
       }
     } catch (err: any) {
       setIsSubmitting(false);

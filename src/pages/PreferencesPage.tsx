@@ -1,7 +1,21 @@
-// PreferencesPage.tsx
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { AuthContext } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+export type User = {
+  id: string;
+  email: string;
+  likes?: string[];
+  dislikes?: string[];
+  allergies?: string[];
+  color?: string;
+  animal?: string;
+  // ...other properties
+};
 
 export default function PreferencesPage() {
   const [likes, setLikes] = useState(['']);
@@ -10,8 +24,23 @@ export default function PreferencesPage() {
   const [color, setColor] = useState('');
   const [animal, setAnimal] = useState('');
   const [errors, setErrors] = useState<{ likes?: boolean; color?: boolean; animal?: boolean }>({});
+  const navigate = useNavigate();
 
   const auth = useContext(AuthContext);
+
+  useEffect(() => {
+    if (auth?.user) {
+      const isAlreadyOnboarded =
+        Array.isArray(auth.user.likes) &&
+        auth.user.likes.length > 0 &&
+        auth.user.color &&
+        auth.user.animal;
+
+      if (isAlreadyOnboarded) {
+        navigate('/dashboard');
+      }
+    }
+  }, [auth?.user, navigate]);
 
   const handleChange = (setter: any, index: number, value: string) => {
     setter((prev: string[]) => {
@@ -51,13 +80,15 @@ export default function PreferencesPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de l'envoi des préférences");
+        const errorText = await response.text();
+        throw new Error(errorText || "Erreur lors de l'envoi des préférences");
       }
 
-      alert("Préférences enregistrées avec succès !");
+      toast.success("Préférences enregistrées avec succès !");
+      setTimeout(() => navigate("/dashboard"), 1500);
     } catch (err: any) {
       console.error(err);
-      alert(err.message);
+      toast.error(err.message || "Une erreur est survenue.");
     }
   };
 
@@ -154,6 +185,7 @@ export default function PreferencesPage() {
           Enregistrer mes préférences
         </button>
       </motion.form>
+      <ToastContainer position="top-center" autoClose={4000} theme="colored" />
     </div>
   );
 }

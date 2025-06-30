@@ -1,15 +1,18 @@
 import { createContext, useState, ReactNode, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-type User = {
+export interface User {
   id: string;
   name: string;
   email: string;
-} | null;
+  gameId?: string;   // <-- Add this line
+  isAdmin?: boolean; // <-- And this line
+}
 
 type AuthContextType = {
-  user: User;
+  user: User | null; // Allow null here
   signup: (name: string, email: string, password: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -18,7 +21,7 @@ type AuthContextType = {
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User>(null);
+  const [user, setUser] = useState<User | null>(null); // Allow null here
   const [loading, setLoading] = useState(true);
 
   const fetchUser = async () => {
@@ -88,6 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
+    navigate('/');
   };
 
   return (
