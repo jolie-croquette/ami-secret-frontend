@@ -41,7 +41,7 @@ export default function Dashboard() {
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        onClick={() => navigate('/start')}
+        onClick={() => navigate('/games/create')}
         className="px-6 py-3 rounded-full bg-yellow-400 hover:bg-yellow-500 text-green-900 font-bold shadow-lg"
       >
         Commencer une partie

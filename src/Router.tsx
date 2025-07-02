@@ -5,6 +5,7 @@ import AuthPage from '@/pages/AuthPage';
 import PreferencesPage from './pages/PreferencesPage';
 import Dashboard from './pages/Dashboard';
 import RequireAuth from './components/RequireAuth';
+import CreateGame from './pages/createGame';
 
 const router = createBrowserRouter([
   {
@@ -44,8 +45,21 @@ const router = createBrowserRouter([
         )
       }
     ]
-  }
-
+  },
+  {
+    path: '/games',
+    element: <Layout />,
+    children: [
+      {
+        path: 'create',
+        element: (
+          <RequireAuth>
+            <CreateGame />
+          </RequireAuth>
+        )
+      },
+    ]
+  },
 ] as RouteObject[]);
 
 export { router };
