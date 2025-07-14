@@ -28,7 +28,7 @@ export default function Header() {
   return (
     <header className="w-full fixed top-0 left-0 z-50 bg-green-50/80 backdrop-blur-md shadow-md">
       <div className="max-w-screen-xl mx-auto flex justify-between items-center px-6 py-4">
-        <Link to="/" className="flex items-center gap-3">
+        <Link to="/dashboard" className="flex items-center gap-3">
           <span className="text-xl md:text-2xl font-extrabold text-green-900 tracking-tight">
             <i className="fa-solid fa-gift"></i> Ami(e) Secret
           </span>

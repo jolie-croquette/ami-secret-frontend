@@ -13,7 +13,6 @@ export type User = {
   allergies?: string[];
   color?: string;
   animal?: string;
-  // ...other properties
 };
 
 export default function PreferencesPage() {

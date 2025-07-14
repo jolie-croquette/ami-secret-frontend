@@ -6,6 +6,7 @@ import PreferencesPage from './pages/PreferencesPage';
 import Dashboard from './pages/Dashboard';
 import RequireAuth from './components/RequireAuth';
 import CreateGame from './pages/createGame';
+import LobbyAdminPage from './pages/LobbyAdminPage';
 
 const router = createBrowserRouter([
   {
@@ -58,6 +59,20 @@ const router = createBrowserRouter([
           </RequireAuth>
         )
       },
+    ],      
+  },
+  {
+    path: '/lobby',
+    element: <Layout />,
+    children: [
+      {
+        path: ':code',
+        element: (
+          <RequireAuth>
+            <LobbyAdminPage />
+          </RequireAuth>
+        )
+      }
     ]
   },
 ] as RouteObject[]);
