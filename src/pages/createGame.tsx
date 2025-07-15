@@ -31,7 +31,6 @@ export default function CreateGame() {
         if (res.ok) {
           setSuggestions((prev) => {
             const copy = [...prev];
-            // 👇 Filtre les suggestions pour exclure l'utilisateur courant
             const currentUserName = auth?.user?.name;
             const filtered = json.data
               .map((u: any) => u.name)
