@@ -1,337 +1,320 @@
-import { useEffect, useState, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useContext, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { AuthContext } from '@/context/AuthContext';
+import { toast, ToastContainer } from 'react-toastify';
 
-interface Game {
-  _id: string;
-  name: string;
-  code: string;
-  numberOfWeeks: number;
-  reminderDayBefore: number;
-  players: {
-    _id: string;
-    name: string;
-    email: string;
-    invitationStatus: 'pending' | 'accepted' | 'refused' | 'none';
-  }[];
-  invitations: {
-    _id: string;
-    recipient: {
-      _id: string;
-    };
-  }[];
-}
+type Errors = Partial<{
+  gameName: string;
+  weeks: string;
+  reminderDays: string;
+}>;
 
+const clampInt = (v: any, opts: { min?: number; max?: number; fallback?: number } = {}) => {
+  const { min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY, fallback = 0 } = opts;
+  const n = Number.parseInt(String(v), 10);
+  if (Number.isNaN(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+};
 
-interface PlayerDetails {
-  _id: string;
-  name: string;
-  email: string;
-  invitationStatus?: 'pending' | 'accepted' | 'refused' | 'none';
-  likes?: string[];
-  dislikes?: string[];
-  favoriteColor?: string;
-  favoriteAnimal?: string;
-  allergies?: string[];
-}
+// Règles métier (même que le schéma backend)
+const LIMITS = {
+  weeks: { min: 1, max: 52 },
+  reminderDays: { min: 0, max: 6 },
+  gameName: { min: 3, max: 60 }, // confort UI
+};
 
+export default function CreateGame() {
+  const { user } = useContext(AuthContext) ?? ({} as any);
+  const [gameName, setGameName] = useState('');
+  const [weeks, setWeeks] = useState(4);
+  const [reminderDays, setReminderDays] = useState(2);
+  const [includeAdmin, setIncludeAdmin] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
-export default function LobbyAdminPage() {
-  const { code } = useParams();
-  const auth = useContext(AuthContext);
-  const [game, setGame] = useState<Game | null>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false); // Pour afficher le popup de chargement
-  const [selectedInvitationId, setSelectedInvitationId] = useState<string | null>(null);
-  const [currentPlayer, setCurrentPlayer] = useState<string | null>(null);
-  const [detailPlayer, setDetailPlayer] = useState<PlayerDetails | null>(null);
+  const [errors, setErrors] = useState<Errors>({});
+  const [touched, setTouched] = useState<{ gameName?: boolean; weeks?: boolean; reminderDays?: boolean }>({});
+  const [submittedOnce, setSubmittedOnce] = useState(false);
 
-  const fetchPlayerDetails = async (playerId: string) => {
-    const token = localStorage.getItem('token');
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/user/preferences/${playerId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  const apiUrl = useMemo(() => import.meta.env.VITE_API_URL as string, []);
+  const navigate = useNavigate();
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message);
+  // Refs pour focus auto sur la 1ère erreur
+  const nameRef = useRef<HTMLInputElement | null>(null);
+  const weeksRef = useRef<HTMLInputElement | null>(null);
+  const reminderRef = useRef<HTMLInputElement | null>(null);
 
-      setDetailPlayer(json.data);
-    } catch (err: any) {
-      console.error("Erreur lors du chargement des détails :", err.message);
-      alert("Impossible de charger les détails du joueur.");
+  const validate = (state?: { gameName: string; weeks: number; reminderDays: number }) => {
+    const g = state?.gameName ?? gameName;
+    const w = state?.weeks ?? weeks;
+    const r = state?.reminderDays ?? reminderDays;
+
+    const e: Errors = {};
+
+    const gn = g.trim();
+    if (!gn) e.gameName = 'Le nom de la partie est requis.';
+    else if (gn.length < LIMITS.gameName.min) e.gameName = `Au moins ${LIMITS.gameName.min} caractères.`;
+    else if (gn.length > LIMITS.gameName.max) e.gameName = `Maximum ${LIMITS.gameName.max} caractères.`;
+
+    if (w < LIMITS.weeks.min || w > LIMITS.weeks.max) {
+      e.weeks = `Entre ${LIMITS.weeks.min} et ${LIMITS.weeks.max} semaines.`;
+    }
+
+    if (r < LIMITS.reminderDays.min || r > LIMITS.reminderDays.max) {
+      e.reminderDays = `Entre ${LIMITS.reminderDays.min} et ${LIMITS.reminderDays.max} jours.`;
+    }
+
+    return e;
+  };
+
+  const focusFirstError = (e: Errors) => {
+    if (e.gameName) { nameRef.current?.focus(); return; }
+    if (e.weeks) { weeksRef.current?.focus(); return; }
+    if (e.reminderDays) { reminderRef.current?.focus(); return; }
+  };
+
+  const showError = (key: keyof Errors) => (touched[key] || submittedOnce) && errors[key];
+
+  const onChangeName = (v: string) => {
+    setGameName(v);
+    if (touched.gameName || submittedOnce) {
+      setErrors(validate({ gameName: v, weeks, reminderDays }));
+    }
+  };
+  const onChangeWeeks = (v: string) => {
+    const clamped = clampInt(v, { min: LIMITS.weeks.min, max: LIMITS.weeks.max, fallback: LIMITS.weeks.min });
+    setWeeks(clamped);
+    if (touched.weeks || submittedOnce) {
+      setErrors(validate({ gameName, weeks: clamped, reminderDays }));
+    }
+  };
+  const onChangeReminder = (v: string) => {
+    const clamped = clampInt(v, { min: LIMITS.reminderDays.min, max: LIMITS.reminderDays.max, fallback: LIMITS.reminderDays.min });
+    setReminderDays(clamped);
+    if (touched.reminderDays || submittedOnce) {
+      setErrors(validate({ gameName, weeks, reminderDays: clamped }));
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittedOnce(true);
 
-  const fetchGame = async () => {
+    const nowErrors = validate();
+    setErrors(nowErrors);
+
+    if (Object.keys(nowErrors).length > 0) {
+      focusFirstError(nowErrors);
+      toast.error('Corrige les champs en rouge.');
+      return;
+    }
+
+    const adminName = String(user?.name || '').trim();
+    if (!adminName) {
+      toast.error("Impossible de récupérer le nom de l'administrateur.");
+      return;
+    }
+
+    setSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/game/code/${code}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message);
+      if (!token) throw new Error('Non authentifié');
 
-      if (json.data.admin._id !== auth?.user?.id) {
-        setError("Accès refusé : vous n'êtes pas l'administrateur de cette partie.");
-        return;
-      }
-
-      setGame(json.data);
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors du chargement.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (auth?.user) fetchGame();
-  }, [code, auth?.user]);
-
-
-  const handleRemovePlayer = async (playerId: string) => {
-    if (!game) return;
-    const token = localStorage.getItem('token');
-
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/game/${game._id}/player/${playerId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message);
-
-      await fetchGame();
-    } catch (err: any) {
-      alert("Erreur : " + err.message);
-    }
-  };
-
-
-  const handleCancelInvitation = async (invitationId: string) => {
-    if (!game) return;
-    const token = localStorage.getItem('token');
-
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/game/${game._id}/invitation/${invitationId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!res.ok) throw new Error("Erreur lors de l'annulation de l'invitation");
-
-      await fetchGame();
-    } catch (err) {
-      alert("Erreur: " + (err as Error).message);
-    }
-  };
-
-  const handleDraw = async () => {
-    if (!game) return;
-    const token = localStorage.getItem('token');
-
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/game/${game._id}/draw`, {
+      const res = await fetch(`${apiUrl}/game/create`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          name: gameName.trim(),
+          weeks,
+          reminderDays,
+          players: includeAdmin ? [adminName] : [],
+        }),
       });
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message);
-
-      alert("🎉 Le tirage au sort a été effectué !");
-    } catch (err: any) {
-      alert("Erreur : " + err.message);
-    }
-  };
-
-  const handleInv = async () => {
-    if (!game) return;
-    const token = localStorage.getItem('token');
-    setSending(true);
-
-    const toInvite = game.players.filter(
-      (p) => p.invitationStatus === 'none' || p.invitationStatus === 'refused'
-    );
-
-    for (const player of toInvite) {
-      setCurrentPlayer(player.name);
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/game/${game.code}/invite`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            gameId: game._id,
-            playerId: player._id,
-          }),
-        });
-
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.message);
-      } catch (err: any) {
-        console.error(`Erreur avec ${player.name} : ${err.message}`);
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg =
+          json?.message ||
+          (!includeAdmin
+            ? "Le serveur refuse une liste de joueurs vide. Active “Je participe” ou adapte l’API."
+            : 'Erreur lors de la création de la partie.');
+        throw new Error(msg);
       }
-    }
 
-    await fetchGame();
-    setSending(false);
-    setCurrentPlayer(null);
+      toast.success('Partie créée ✨');
+      navigate(`/lobby/${json.data.code}`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Erreur inconnue.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  if (loading) return <p className="text-center mt-10">Chargement...</p>;
-  if (error) return <p className="text-red-500 text-center mt-10">{error}</p>;
-  if (!game) return null;
+  const inputBase =
+    'w-full px-4 py-2 rounded-full border focus:ring-2 shadow-sm transition';
+  const ok = Object.keys(validate()).length === 0;
 
   return (
-    <div className="bg-yellow-50 min-h-screen py-12 px-4 relative">
-      {sending && (
-        <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-xl shadow-xl text-center">
-            <p className="text-xl font-bold text-green-800">Envoi des invitations...</p>
-            <p className="text-gray-600 mt-2">Merci de patienter pendant l'envoi des courriels ✉️</p>
-            <p className="text-gray-600 mt-2">Envoie en cours à : {currentPlayer}</p>
+    <div className="min-h-screen bg-yellow-50 py-20 px-4 flex justify-center items-start">
+      <motion.form
+        onSubmit={handleSubmit}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-xl bg-white rounded-3xl shadow-2xl p-10 border border-yellow-300"
+        noValidate
+        aria-labelledby="create-game-title"
+      >
+        <h1 id="create-game-title" className="text-3xl font-extrabold text-green-800 mb-8 text-center">
+          🎉 Créer une partie
+        </h1>
+
+        {/* Nom */}
+        <div className="mb-6">
+          <label htmlFor="game-name" className="block text-sm font-semibold text-green-900 mb-2">
+            Nom de la partie
+          </label>
+          <input
+            id="game-name"
+            ref={nameRef}
+            type="text"
+            value={gameName}
+            onChange={(e) => onChangeName(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, gameName: true }))}
+            placeholder="Ex: Camp d'été 2025"
+            className={
+              inputBase +
+              ' ' +
+              (showError('gameName')
+                ? 'border-red-300 focus:ring-red-300'
+                : 'border-yellow-300 focus:ring-green-400')
+            }
+            aria-invalid={!!showError('gameName')}
+            aria-describedby="name-help name-error"
+            disabled={submitting}
+            maxLength={LIMITS.gameName.max}
+            required
+          />
+          <div className="mt-1 flex items-center justify-between text-xs">
+            <p id="name-help" className="text-gray-500">
+              {`Entre ${LIMITS.gameName.min} et ${LIMITS.gameName.max} caractères.`}
+            </p>
+            <p className="text-gray-400">{gameName.trim().length}/{LIMITS.gameName.max}</p>
           </div>
-        </div>
-      )}
-
-      <div className="mt-20 max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-1 bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-          <h2 className="text-xl font-bold text-green-800 mb-4">🎮 Détails de la partie</h2>
-          <ul className="text-lg text-gray-700 space-y-2">
-            <li><strong>Nom :</strong> {game.name}</li>
-            <li><strong>Code :</strong> <span className="font-mono">{game.code}</span></li>
-            <li><strong>Durée :</strong> {game.numberOfWeeks} semaines</li>
-            <li><strong>Rappel :</strong> {game.reminderDayBefore} jours avant</li>
-          </ul>
+          {showError('gameName') && (
+            <p id="name-error" className="mt-1 text-xs text-red-600">{errors.gameName}</p>
+          )}
         </div>
 
-        <div className="md:col-span-2 bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-          <h2 className="text-xl font-bold text-green-800 mb-4">👥 Participants</h2>
-          <div className="space-y-3">
-          {game.players.map((player) => (
-            <div
-              key={player._id}
-              className="relative flex justify-between items-center p-3 rounded-xl border bg-gray-50 hover:bg-yellow-50"
-            >
-              <div>
-                <p className="text-sm font-medium text-gray-800">{player.name}</p>
-                <p className="text-xs text-gray-500">{player.email}</p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className={`px-3 py-1 text-xs font-semibold rounded-full 
-                  ${player.invitationStatus === 'accepted'
-                    ? 'bg-green-100 text-green-800'
-                    : player.invitationStatus === 'refused'
-                    ? 'bg-red-100 text-red-800'
-                    : player.invitationStatus === 'pending'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-gray-100 text-gray-600'
-                  }`}>
-                  {player.invitationStatus === 'pending'
-                    ? 'En attente'
-                    : player.invitationStatus === 'accepted'
-                    ? 'Accepté'
-                    : player.invitationStatus === 'refused'
-                    ? 'Refusé'
-                    : 'Aucune invitation envoyée'}
-                </span>
-
-                <div className="flex items-center gap-2 p-2 rounded-2xl bg-gray-400">
-                  {/* Bouton : Annuler l’invitation */}
-                  {player.invitationStatus === 'pending' && (
-                    <button
-                      onClick={() => {
-                        const invitation = game.invitations?.find(
-                          (inv) => inv.recipient._id === player._id
-                        );
-                        if (invitation) handleCancelInvitation(invitation._id);
-                        else alert("Invitation introuvable.");
-                      }}
-                      className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-full hover:bg-red-200"
-                    >
-                      Annuler l’invitation
-                    </button>
-                  )}
-
-                  {/* Bouton : Retirer le joueur */}
-                  <button
-                    onClick={() => handleRemovePlayer(player._id)}
-                    className="px-3 py-1 text-xs bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300"
-                  >
-                    Retirer
-                  </button>
-
-                  {/* Bouton : Voir préférences */}
-                  <button
-                    onClick={() => fetchPlayerDetails(player._id)}
-                    className="px-3 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full hover:bg-yellow-200"
-                  >
-                    Préférences
-                  </button>
-                </div>
-
-
-              </div>
-            </div>
-          ))}
-
-          </div>
-
-          <div className="mt-8 text-center flex flex-col items-center gap-4">
-            {game.players.some(p => p.invitationStatus === 'none' || p.invitationStatus === 'refused') && (
-              <button
-                className='inline-block bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-6 rounded-full shadow-lg'
-                onClick={handleInv}
-                disabled={sending}
-              >
-                Envoyer les invitations
-              </button>
-            )}
-          </div>
+        {/* Semaines */}
+        <div className="mb-6">
+          <label htmlFor="weeks" className="block text-sm font-semibold text-green-900 mb-2">
+            Durée (semaines)
+          </label>
+          <input
+            id="weeks"
+            ref={weeksRef}
+            type="number"
+            min={LIMITS.weeks.min}
+            max={LIMITS.weeks.max}
+            value={weeks}
+            onChange={(e) => onChangeWeeks(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, weeks: true }))}
+            className={
+              inputBase +
+              ' ' +
+              (showError('weeks')
+                ? 'border-red-300 focus:ring-red-300'
+                : 'border-yellow-300 focus:ring-green-400')
+            }
+            aria-invalid={!!showError('weeks')}
+            aria-describedby="weeks-help weeks-error"
+            disabled={submitting}
+            inputMode="numeric"
+            required
+          />
+          <p id="weeks-help" className="mt-1 text-xs text-gray-500">
+            {`Entre ${LIMITS.weeks.min} et ${LIMITS.weeks.max} semaines.`}
+          </p>
+          {showError('weeks') && (
+            <p id="weeks-error" className="mt-1 text-xs text-red-600">{errors.weeks}</p>
+          )}
         </div>
-      </div>
-      {detailPlayer && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full relative">
-            <h2 className="text-2xl font-bold text-green-800 mb-4">👤 Détails du joueur</h2>
-            <p><strong>Nom :</strong> {detailPlayer.name}</p>
-            <p><strong>Courriel :</strong> {detailPlayer.email}</p>
-            <hr className="my-4" />
 
-            <h3 className="text-lg font-semibold mb-2 text-green-700">🎁 Préférences</h3>
-            <ul className="text-sm text-gray-700 space-y-1">
-              <li><strong>Aime :</strong> {detailPlayer.likes?.join(', ') || '—'}</li>
-              <li><strong>N’aime pas :</strong> {detailPlayer.dislikes?.join(', ') || '—'}</li>
-              <li><strong>Couleur préférée :</strong> {detailPlayer.favoriteColor || '—'}</li>
-              <li><strong>Animal préféré :</strong> {detailPlayer.favoriteAnimal || '—'}</li>
-              <li><strong>Allergies :</strong> {detailPlayer.allergies?.join(', ') || 'Aucune'}</li>
-            </ul>
-
-            <button
-              onClick={() => setDetailPlayer(null)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-xl"
-              aria-label="Fermer"
-            >
-              ×
-            </button>
-          </div>
+        {/* Rappel */}
+        <div className="mb-6">
+          <label htmlFor="reminder" className="block text-sm font-semibold text-green-900 mb-2">
+            Jours avant le rappel courriel
+          </label>
+          <input
+            id="reminder"
+            ref={reminderRef}
+            type="number"
+            min={LIMITS.reminderDays.min}
+            max={LIMITS.reminderDays.max}
+            value={reminderDays}
+            onChange={(e) => onChangeReminder(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, reminderDays: true }))}
+            className={
+              inputBase +
+              ' ' +
+              (showError('reminderDays')
+                ? 'border-red-300 focus:ring-red-300'
+                : 'border-yellow-300 focus:ring-green-400')
+            }
+            aria-invalid={!!showError('reminderDays')}
+            aria-describedby="reminder-help reminder-error"
+            disabled={submitting}
+            inputMode="numeric"
+            required
+          />
+          <p id="reminder-help" className="mt-1 text-xs text-gray-500">
+            {`Entre ${LIMITS.reminderDays.min} et ${LIMITS.reminderDays.max} jours.`}
+          </p>
+          {showError('reminderDays') && (
+            <p id="reminder-error" className="mt-1 text-xs text-red-600">{errors.reminderDays}</p>
+          )}
         </div>
-      )}
+
+        {/* Admin joue ? */}
+        <div className="mb-6">
+          <label className="inline-flex items-center text-green-900 font-semibold">
+            <input
+              type="checkbox"
+              checked={includeAdmin}
+              onChange={() => setIncludeAdmin((v) => !v)}
+              className="mr-2 accent-green-600"
+              disabled={submitting}
+            />
+            Je participe moi-même à la partie
+          </label>
+          <p className="mt-2 text-xs text-gray-600">
+            {includeAdmin
+              ? 'Tu seras ajouté aux joueurs au moment de la création.'
+              : 'Tu ne seras pas joueur — partage le code pour que les autres vous rejoignent.'}
+          </p>
+        </div>
+
+        {/* Bannière d’info rapide */}
+        <div className="mb-6 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-xs text-yellow-900">
+          Règles : {LIMITS.weeks.min}–{LIMITS.weeks.max} semaines • {LIMITS.reminderDays.min}–{LIMITS.reminderDays.max} jours de rappel • Nom {LIMITS.gameName.min}–{LIMITS.gameName.max} caractères.
+        </div>
+
+        <button
+          type="submit"
+          disabled={submitting || !ok}
+          className={
+            'w-full py-3 rounded-full text-white font-bold shadow-lg transition ' +
+            (submitting || !ok
+              ? 'bg-green-400 cursor-not-allowed'
+              : 'bg-green-500 hover:bg-green-600')
+          }
+        >
+          {submitting ? 'Création…' : 'Lancer la partie'}
+        </button>
+      </motion.form>
+
+      <ToastContainer position="top-center" autoClose={4000} theme="colored" />
     </div>
   );
 }

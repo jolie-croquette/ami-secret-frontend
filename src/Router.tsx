@@ -1,80 +1,116 @@
-import { createBrowserRouter } from 'react-router-dom';
-import type { RouteObject } from 'react-router-dom';
+// router.tsx
+import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { lazy } from 'react';
+import { Suspense, type ReactNode, type ReactElement } from 'react';
 import Layout from '@/pages/layout/Layout';
-import AuthPage from '@/pages/AuthPage';
-import PreferencesPage from './pages/PreferencesPage';
-import Dashboard from './pages/Dashboard';
-import RequireAuth from './components/RequireAuth';
-import CreateGame from './pages/createGame';
-import LobbyAdminPage from './pages/LobbyAdminPage';
+import RequireAuth from '@/components/RequireAuth';
+import RequireNoAuth from '@/components/RequireNoAuth';
 
-const router = createBrowserRouter([
+// Lazy load
+const AuthPage = lazy(() => import('@/pages/AuthPage'));
+const PreferencesPage = lazy(() => import('@/pages/PreferencesPage'));
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const CreateGame = lazy(() => import('@/pages/createGame'));   // ⚠️ vois la note sur la casse ci-dessous
+const LobbyAdminPage = lazy(() => import('@/pages/LobbyAdminPage'));
+const JoinGamePage = lazy(() => import('@/pages/JoinGame'));
+
+const NotFound = () => (
+  <div className="min-h-screen flex items-center justify-center text-center p-8">
+    <div>
+      <h1 className="text-3xl font-extrabold mb-2">Oups, page introuvable</h1>
+      <p className="text-gray-600 mb-6">Le lien est peut-être expiré ou l'URL incorrecte.</p>
+      <a href="/dashboard" className="px-5 py-2 rounded-full bg-green-600 text-white font-semibold">
+        Retour au tableau de bord
+      </a>
+    </div>
+  </div>
+);
+
+const withSuspense = (el: ReactNode): ReactElement => (
+  <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Chargement…</div>}>
+    {el}
+  </Suspense>
+)
+
+export const router = createBrowserRouter([
   {
-    path: '/',
+    // Un SEUL Layout pour toute l'app
     element: <Layout />,
     children: [
+      // accueil (login)
+      { 
+        index: true, 
+        path: '/', 
+        element: withSuspense(
+          <RequireNoAuth>
+            <AuthPage />
+          </RequireNoAuth>
+        ) 
+      },
+
+      // onboarding préférences
       {
-        index: true,
-        element: <AuthPage />
-      }
-    ]
-  },
-  {
-    path: '/onboard',
-    element: <Layout />,
-    children: [
-      {
-        index: true,
-        element: (
+        path: '/onboard',
+        element: withSuspense(
           <RequireAuth>
             <PreferencesPage />
           </RequireAuth>
-        )
-      }
-    ]
-  },
-  {
-    path: '/dashboard',
-    element: <Layout />,
-    children: [
+        ),
+      },
+
+      // dashboard
       {
-        index: true,
-        element: (
+        path: '/dashboard',
+        element: withSuspense(
           <RequireAuth>
             <Dashboard />
-          </RequireAuth> 
-        )
-      }
-    ]
-  },
-  {
-    path: '/games',
-    element: <Layout />,
-    children: [
+          </RequireAuth>
+        ),
+      },
+
+      // game
       {
-        path: 'create',
-        element: (
+        path: '/game/create',
+        element: withSuspense(
           <RequireAuth>
             <CreateGame />
           </RequireAuth>
-        )
+        ),
       },
-    ],      
-  },
-  {
-    path: '/lobby',
-    element: <Layout />,
-    children: [
       {
-        path: ':code',
-        element: (
+        // principal (emails): /game/join?code=ABC123
+        path: '/game/join',
+        element: withSuspense(
+          <RequireAuth>
+            <JoinGamePage />
+          </RequireAuth>
+        ),
+      },
+      {
+        // alias: /game/join/ABC123
+        path: '/game/join/:code',
+        element: withSuspense(
+          <RequireAuth>
+            <JoinGamePage />
+          </RequireAuth>
+        ),
+      },
+
+      // lobby
+      {
+        path: '/lobby/:code',
+        element: withSuspense(
           <RequireAuth>
             <LobbyAdminPage />
           </RequireAuth>
-        )
-      }
-    ]
-  },
-] as RouteObject[]);
+        ),
+      },
 
-export { router };
+      // redirects utiles
+      { path: '/home', element: <Navigate to="/dashboard" replace /> },
+
+      // 404
+      { path: '*', element: <NotFound /> },
+    ],
+  },
+]);

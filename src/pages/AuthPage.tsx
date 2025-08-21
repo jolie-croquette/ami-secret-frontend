@@ -1,22 +1,15 @@
-import { useState, useContext } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import background from '@/assets/camp-bg.jpg';
 import { waveform } from 'ldrs';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { ToastContainer } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import 'react-toastify/dist/ReactToastify.css';
 
 const inputVariants = {
-  focus: {
-    scale: 1.02,
-    transition: { duration: 0.2 },
-  },
-  blur: {
-    scale: 1,
-    transition: { duration: 0.2 },
-  },
+  focus: { scale: 1.02, transition: { duration: 0.2 } },
+  blur: { scale: 1, transition: { duration: 0.2 } },
 };
 
 export default function AuthPage() {
@@ -24,76 +17,62 @@ export default function AuthPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [focusedField, setFocusedField] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const auth = useContext(AuthContext);
-  waveform.register();
   const navigate = useNavigate();
 
+  // Enregistre le web component 1x
+  useEffect(() => {
+    waveform.register();
+  }, []);
+
+  // 🔒 Blocage: si déjà connecté → redirige
+  useEffect(() => {
+    if (auth?.user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [auth?.user, navigate]);
+
   const toggleForm = () => {
+    if (isSubmitting) return;
     setIsLogin(!isLogin);
     setForm({ name: '', email: '', password: '' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!auth) return toast.error("Erreur interne : AuthContext indisponible");
 
-    const {name, email, password} = form;
+    const { name, email, password } = form;
+    if (!email || !password) return toast.warning("Courriel et mot de passe sont requis.");
 
-    if (!email || !password) {
-      return toast.warning("Courriel et mot de passe sont requis.")
-    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
+    if (!emailRegex.test(email)) return toast.warning("Veuillez entrer une adresse courriel valide.");
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return toast.warning("Veuillez entrer une adresse courriel valide.");
-    }
-
-    if (isLogin) {
-      // Spécifique à la connexion
-      if (password.length < 6) {
-        return toast.warning("Mot de passe trop court (min. 6 caractères).");
-      }
-    } else {
-      // Spécifique à la création de compte
-      if (!name.trim()) {
-        return toast.warning("Le nom est requis.");
-      }
-      if (password.length < 6) {
-        return toast.warning("Mot de passe trop court (min. 6 caractères).");
-      }
-    }
+    if (!isLogin && !name.trim()) return toast.warning("Le nom est requis.");
+    if (password.length < 6) return toast.warning("Mot de passe trop court (min. 6 caractères).");
 
     setIsSubmitting(true);
-
     try {
       if (isLogin) {
         await auth.login(email, password);
         toast.success("Connexion réussie !");
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       } else {
         await auth.signup(name, email, password);
         toast.success("Compte créé avec succès !");
-        navigate('/onboard');
+        navigate('/onboard', { replace: true });
       }
     } catch (err: any) {
-      setIsSubmitting(false);
-      if (
-        err.message?.toLowerCase().includes("courriel") ||
-        err.message?.toLowerCase().includes("mot de passe")
-      ) {
+      const msg = (err?.message || '').toLowerCase();
+      if (msg.includes('courriel') || msg.includes('mot de passe')) {
         toast.error("Courriel ou mot de passe incorrect");
       } else {
-        toast.error(err.message || "Erreur de connexion.");
+        toast.error(err?.message || "Erreur d'authentification.");
       }
+      setIsSubmitting(false);
     }
-
-    // useEffect(() => {
-    //   if (auth?.user) {
-    //     navigate('/onboarding');
-    //   }
-    // })
-  }
+  };
 
   return (
     <div
@@ -101,6 +80,7 @@ export default function AuthPage() {
       style={{ backgroundImage: `url(${background})` }}
     >
       <div className="absolute inset-0 bg-yellow-50/70 backdrop-blur-sm z-0" />
+
       <motion.div
         key={isLogin ? 'login' : 'signup'}
         initial={{ opacity: 0, y: 30, scale: 0.95 }}
@@ -132,12 +112,14 @@ export default function AuthPage() {
                   <input
                     id="name"
                     type="text"
+                    autoComplete="name"
                     className="mt-1 w-full px-4 py-2 rounded-full border border-yellow-300 focus:ring-2 focus:ring-yellow-400 shadow-sm"
                     value={form.name}
                     onFocus={() => setFocusedField('name')}
                     onBlur={() => setFocusedField('')}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     required
+                    disabled={isSubmitting}
                   />
                 </motion.div>
               </motion.div>
@@ -153,12 +135,15 @@ export default function AuthPage() {
             <input
               id="email"
               type="email"
+              autoComplete="email"
+              inputMode="email"
               className="mt-1 w-full px-4 py-2 rounded-full border border-yellow-300 focus:ring-2 focus:ring-yellow-400 shadow-sm"
               value={form.email}
               onFocus={() => setFocusedField('email')}
               onBlur={() => setFocusedField('')}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               required
+              disabled={isSubmitting}
             />
           </motion.div>
 
@@ -171,12 +156,14 @@ export default function AuthPage() {
             <input
               id="password"
               type="password"
+              autoComplete={isLogin ? 'current-password' : 'new-password'}
               className="mt-1 w-full px-4 py-2 rounded-full border border-yellow-300 focus:ring-2 focus:ring-yellow-400 shadow-sm"
               value={form.password}
               onFocus={() => setFocusedField('password')}
               onBlur={() => setFocusedField('')}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               required
+              disabled={isSubmitting}
             />
           </motion.div>
 
@@ -190,7 +177,8 @@ export default function AuthPage() {
             } text-white font-bold text-md tracking-wide shadow-md transition`}
           >
             {isSubmitting ? (
-              "..."
+              // @ts-ignore – web component ldrs
+              <l-waveform size="26" stroke="3" speed="1" color="white" />
             ) : (
               isLogin ? "Se connecter" : "Créer un compte"
             )}
@@ -199,16 +187,13 @@ export default function AuthPage() {
 
         <p className="mt-6 text-center text-sm text-green-800">
           {isLogin ? "Pas encore de compte ?" : 'Déjà inscrit ?'}{' '}
-          <button onClick={toggleForm} className="underline font-semibold">
+          <button onClick={toggleForm} disabled={isSubmitting} className="underline font-semibold disabled:opacity-50">
             {isLogin ? "Créer un compte" : 'Se connecter'}
           </button>
         </p>
       </motion.div>
-      <ToastContainer
-        position="top-center"
-        autoClose={4000}
-        theme="colored"
-      />
+
+      <ToastContainer position="top-center" autoClose={4000} theme="colored" />
     </div>
   );
 }
