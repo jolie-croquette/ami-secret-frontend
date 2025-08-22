@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AuthContext } from '@/context/AuthContext';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 import { Bouncy } from 'ldrs/react';
 import 'ldrs/react/Bouncy.css';
 
@@ -77,6 +77,12 @@ export default function LobbyAdminPage() {
   const [profile, setProfile] = useState<PlayerDetails | null>(null);
   const [profileGrad, setProfileGrad] = useState<string>('from-emerald-400 to-green-600');
 
+  // ── Confirmation retrait joueur
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<Player | null>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
+
+
   const token = () => localStorage.getItem('token');
   const ensureAuth = () => {
     const t = token();
@@ -146,7 +152,7 @@ export default function LobbyAdminPage() {
 
   // ——— Actions API
   const copyLink = async () => {
-    try { await navigator.clipboard.writeText(joinLink); toast.success('Lien copié ✨'); }
+    try { await navigator.clipboard.writeText(joinLink); toast.success('Lien copié'); }
     catch { toast.error('Impossible de copier le lien'); }
   };
 
@@ -155,7 +161,7 @@ export default function LobbyAdminPage() {
     if (!game?.code) return;
     try {
       await navigator.clipboard.writeText(game.code);
-      toast.success('Code copié ✨');
+      toast.success('Code copié');
     } catch {
       toast.error('Impossible de copier le code');
     }
@@ -193,20 +199,53 @@ export default function LobbyAdminPage() {
 
   const canRemove = (p: Player) => !adminIdSet.has(String(p._id)) && String(p._id) !== myId;
 
-  const removePlayer = async (playerId: string) => {
-    if (!game) return;
+  // Ouvre le modal de confirmation
+  const askRemovePlayer = (p: Player) => {
+    if (!canRemove(p)) {
+      toast.error('Impossible de retirer un admin ou vous-même');
+      return;
+    }
+    setConfirmTarget(p);
+    setConfirmOpen(true);
+  };
+
+  // Ferme le modal
+  const closeConfirm = () => {
+    if (confirmBusy) return; // évite de fermer pendant la requête
+    setConfirmOpen(false);
+    setConfirmTarget(null);
+  };
+
+  // Confirme et retire (optimiste, sans refresh)
+  const confirmRemove = async () => {
+    if (!game || !confirmTarget) return;
     const t = ensureAuth(); if (!t) return;
-    if (!confirm('Retirer ce joueur de la partie ?')) return;
+
+    setConfirmBusy(true);
+
+    // Sauvegarde + mise à jour optimiste
+    const prevPlayers = game.players;
+    setGame(g => (g ? { ...g, players: g.players.filter(pl => pl._id !== confirmTarget._id) } : g));
+
     try {
-      const res = await fetch(`${apiUrl}/game/${game._id}/player/${playerId}`, {
-        method: 'DELETE', headers: { Authorization: `Bearer ${t}` },
+      const res = await fetch(`${apiUrl}/game/${game._id}/remove/${confirmTarget._id}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${t}` },
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.message || 'Retrait impossible');
-      toast.success('Joueur retiré.');
-      void fetchGame();
-    } catch (e: any) { toast.error(e?.message || 'Erreur'); }
+
+      toast.success(json?.message || 'Joueur retiré.');
+      setConfirmBusy(false);
+      closeConfirm();
+    } catch (e: any) {
+      // rollback
+      setGame(g => (g ? { ...g, players: prevPlayers } : g));
+      setConfirmBusy(false);
+      toast.error(e?.message || 'Erreur lors du retrait.');
+    }
   };
+
 
   // ——— Profil joueur (modal)
   const openProfile = async (player: Player) => {
@@ -261,9 +300,9 @@ export default function LobbyAdminPage() {
 
   return (
     <div className="bg-yellow-50 min-h-screen py-12 px-4 relative">
-      <div className="mt-20 max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="mt-20 max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {/* Détails */}
-        <div className="md:col-span-1 bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
+        <div className="md:col-span-2 lg:col-span-1 bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
           <div className="flex items-start justify-between">
             <h2 className="text-2xl font-bold text-green-800">Détails de la partie</h2>
             <span className="text-md px-2 py-1 rounded-full bg-red-100 text-red-800 font-bold self-center">
@@ -402,7 +441,7 @@ export default function LobbyAdminPage() {
                             Détails
                           </button>
                           <button
-                            onClick={() => removePlayer(p._id)}
+                            onClick={() => askRemovePlayer(p)}
                             disabled={!canRemove(p)}
                             title={!canRemove(p) ? 'Impossible de retirer un admin ou vous-même' : 'Retirer ce joueur'}
                             className={
@@ -425,7 +464,7 @@ export default function LobbyAdminPage() {
                             Détails
                           </button>
                           <button
-                            onClick={() => canRemove(p) && removePlayer(p._id)}
+                            onClick={() => canRemove(p) && askRemovePlayer(p)}
                             disabled={!canRemove(p)}
                             title={!canRemove(p) ? 'Impossible de retirer un admin ou vous-même' : 'Retirer ce joueur'}
                             className={
@@ -446,6 +485,7 @@ export default function LobbyAdminPage() {
             </ul>
           </div>
         </div>
+        <ToastContainer position="top-center" autoClose={4000} theme="colored" />
       </div>
 
       {/* Modal Profil joueur */}
@@ -567,6 +607,82 @@ export default function LobbyAdminPage() {
                 className="px-4 py-2 rounded-full bg-white border hover:bg-gray-50 text-gray-800 font-semibold"
               >
                 Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal confirmation retrait joueur */}
+      {confirmOpen && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/40"
+          onClick={closeConfirm}
+          onKeyDown={(e) => e.key === 'Escape' && closeConfirm()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-remove-title"
+        >
+          <div
+            className="relative w-[min(560px,92vw)] rounded-2xl bg-white p-6 shadow-2xl border border-yellow-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Fermer */}
+            <button
+              onClick={closeConfirm}
+              disabled={confirmBusy}
+              className="absolute right-3 top-3 text-gray-400 hover:text-gray-700 text-xl disabled:opacity-50"
+              aria-label="Fermer"
+            >
+              ×
+            </button>
+
+            {/* En-tête */}
+            <div className="flex items-center gap-4">
+              {/* Avatar dégradé cohérent avec la liste */}
+              <div
+                className={`w-12 h-12 rounded-full bg-gradient-to-br ${
+                  confirmTarget ? GRADS[hashIdx(confirmTarget._id + confirmTarget.name)] : 'from-emerald-400 to-green-600'
+                } text-white grid place-items-center text-sm font-bold`}
+              >
+                {initials(confirmTarget?.name || '')}
+              </div>
+
+              <div className="min-w-0">
+                <h3 id="confirm-remove-title" className="text-lg font-bold text-green-800 truncate">
+                  Retirer {confirmTarget?.name} ?
+                </h3>
+              </div>
+            </div>
+
+            {/* Corps */}
+            <div className="mt-4 rounded-xl border bg-yellow-50/40 p-4">
+              <p className="text-sm text-gray-700">
+                Cette action retirera ce joueur de la partie. Il pourra toujours la
+                rejoindre à nouveau avec le code <span className="font-mono font-semibold">{game?.code}</span>.
+              </p>
+            </div>
+
+            {/* Pied de modal */}
+            <div className="mt-6 flex items-center justify-end gap-2">
+              <button
+                onClick={closeConfirm}
+                disabled={confirmBusy}
+                className="px-4 py-2 rounded-full bg-white border hover:bg-gray-50 text-gray-800 font-semibold disabled:opacity-60"
+              >
+                Annuler
+              </button>
+
+              <button
+                onClick={confirmRemove}
+                disabled={confirmBusy}
+                className={
+                  'px-4 py-2 rounded-full font-semibold border ' +
+                  (confirmBusy
+                    ? 'bg-red-200 text-red-900 border-red-200 cursor-wait'
+                    : 'bg-red-50 text-red-800 border-red-200 hover:bg-red-100')
+                }
+              >
+                {confirmBusy ? 'Suppression…' : 'Retirer'}
               </button>
             </div>
           </div>

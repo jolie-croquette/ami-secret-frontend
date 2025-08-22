@@ -12,7 +12,7 @@ import 'ldrs/react/Bouncy.css';
 const AuthPage = lazy(() => import('@/pages/AuthPage'));
 const PreferencesPage = lazy(() => import('@/pages/PreferencesPage'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
-const CreateGame = lazy(() => import('@/pages/createGame'));   // ⚠️ vois la note sur la casse ci-dessous
+const CreateGame = lazy(() => import('@/pages/createGame'));
 const LobbyAdminPage = lazy(() => import('@/pages/LobbyAdminPage'));
 const JoinGamePage = lazy(() => import('@/pages/JoinGame'));
 
@@ -31,7 +31,7 @@ const NotFound = () => (
 const withSuspense = (el: ReactNode): ReactElement => (
   <Suspense fallback={<div className="min-h-screen flex items-center justify-center">
     <div className='min-h-[240px] flex items-start justify-center mt-20'>
-          <Bouncy size="100" speed="1.5" color="green" />
+      <Bouncy size="100" speed="1.5" color="green" />
     </div>
   </div>}>
     {el}
