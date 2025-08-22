@@ -7,6 +7,7 @@ import RequireAuth from '@/components/RequireAuth';
 import RequireNoAuth from '@/components/RequireNoAuth';
 import { Bouncy } from 'ldrs/react';
 import 'ldrs/react/Bouncy.css';
+import PlayerLobby from './pages/PlayerLobby';
 
 // Lazy load
 const AuthPage = lazy(() => import('@/pages/AuthPage'));
@@ -108,6 +109,15 @@ export const router = createBrowserRouter([
         element: withSuspense(
           <RequireAuth>
             <LobbyAdminPage />
+          </RequireAuth>
+        ),
+      },
+
+      {
+        path: '/lobby/:code',
+        element: withSuspense(
+          <RequireAuth>
+            <PlayerLobby />
           </RequireAuth>
         ),
       },
