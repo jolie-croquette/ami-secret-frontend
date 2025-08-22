@@ -5,6 +5,8 @@ import { Suspense, type ReactNode, type ReactElement } from 'react';
 import Layout from '@/pages/layout/Layout';
 import RequireAuth from '@/components/RequireAuth';
 import RequireNoAuth from '@/components/RequireNoAuth';
+import { Bouncy } from 'ldrs/react';
+import 'ldrs/react/Bouncy.css';
 
 // Lazy load
 const AuthPage = lazy(() => import('@/pages/AuthPage'));
@@ -27,7 +29,11 @@ const NotFound = () => (
 );
 
 const withSuspense = (el: ReactNode): ReactElement => (
-  <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Chargement…</div>}>
+  <Suspense fallback={<div className="min-h-screen flex items-center justify-center">
+    <div className='min-h-[240px] flex items-start justify-center mt-20'>
+          <Bouncy size="100" speed="1.5" color="green" />
+    </div>
+  </div>}>
     {el}
   </Suspense>
 )
@@ -98,7 +104,7 @@ export const router = createBrowserRouter([
 
       // lobby
       {
-        path: '/lobby/:code',
+        path: '/lobby/:code/admin',
         element: withSuspense(
           <RequireAuth>
             <LobbyAdminPage />

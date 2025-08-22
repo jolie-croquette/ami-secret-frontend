@@ -1,320 +1,577 @@
-import { useContext, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AuthContext } from '@/context/AuthContext';
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
+import { Bouncy } from 'ldrs/react';
+import 'ldrs/react/Bouncy.css';
 
-type Errors = Partial<{
-  gameName: string;
-  weeks: string;
-  reminderDays: string;
-}>;
+interface Player {
+  _id: string;
+  name: string;
+  email: string;
+}
 
-const clampInt = (v: any, opts: { min?: number; max?: number; fallback?: number } = {}) => {
-  const { min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY, fallback = 0 } = opts;
-  const n = Number.parseInt(String(v), 10);
-  if (Number.isNaN(n)) return fallback;
-  return Math.min(max, Math.max(min, n));
+interface Game {
+  _id: string;
+  name: string;
+  code: string;
+  numberOfWeeks: number;
+  reminderDayBefore: number;
+  adminIds: string[];
+  adminUsers?: { _id: string; name?: string }[];
+  players: Player[];
+}
+
+interface PlayerDetails {
+  _id: string;
+  name: string;
+  email: string;
+  likes?: string[];
+  dislikes?: string[];
+  favoriteColor?: string;
+  favoriteAnimal?: string;
+  allergies?: string[];
+  bio?: string;
+}
+
+// ————— Helpers UI —————
+const GRADS = [
+  'from-emerald-400 to-green-600',
+  'from-sky-400 to-blue-600',
+  'from-fuchsia-400 to-purple-600',
+  'from-amber-400 to-orange-600',
+  'from-pink-400 to-rose-600',
+  'from-teal-400 to-cyan-600',
+];
+const hashIdx = (s: string) => {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h % GRADS.length;
 };
+const initials = (name: string) =>
+  name
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+    .map(w => w[0]?.toUpperCase())
+    .slice(0, 2)
+    .join('') || '🙂';
 
-// Règles métier (même que le schéma backend)
-const LIMITS = {
-  weeks: { min: 1, max: 52 },
-  reminderDays: { min: 0, max: 6 },
-  gameName: { min: 3, max: 60 }, // confort UI
-};
-
-export default function CreateGame() {
-  const { user } = useContext(AuthContext) ?? ({} as any);
-  const [gameName, setGameName] = useState('');
-  const [weeks, setWeeks] = useState(4);
-  const [reminderDays, setReminderDays] = useState(2);
-  const [includeAdmin, setIncludeAdmin] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-
-  const [errors, setErrors] = useState<Errors>({});
-  const [touched, setTouched] = useState<{ gameName?: boolean; weeks?: boolean; reminderDays?: boolean }>({});
-  const [submittedOnce, setSubmittedOnce] = useState(false);
-
-  const apiUrl = useMemo(() => import.meta.env.VITE_API_URL as string, []);
+// ————— Page —————
+export default function LobbyAdminPage() {
+  const { code } = useParams();
   const navigate = useNavigate();
+  const { user, logout } = useContext(AuthContext) ?? ({} as any);
+  const apiUrl = useMemo(() => import.meta.env.VITE_API_URL as string, []);
 
-  // Refs pour focus auto sur la 1ère erreur
-  const nameRef = useRef<HTMLInputElement | null>(null);
-  const weeksRef = useRef<HTMLInputElement | null>(null);
-  const reminderRef = useRef<HTMLInputElement | null>(null);
+  const [game, setGame] = useState<Game | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const validate = (state?: { gameName: string; weeks: number; reminderDays: number }) => {
-    const g = state?.gameName ?? gameName;
-    const w = state?.weeks ?? weeks;
-    const r = state?.reminderDays ?? reminderDays;
+  // UI liste
+  const [search, setSearch] = useState('');
 
-    const e: Errors = {};
+  // Modal profil
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profile, setProfile] = useState<PlayerDetails | null>(null);
+  const [profileGrad, setProfileGrad] = useState<string>('from-emerald-400 to-green-600');
 
-    const gn = g.trim();
-    if (!gn) e.gameName = 'Le nom de la partie est requis.';
-    else if (gn.length < LIMITS.gameName.min) e.gameName = `Au moins ${LIMITS.gameName.min} caractères.`;
-    else if (gn.length > LIMITS.gameName.max) e.gameName = `Maximum ${LIMITS.gameName.max} caractères.`;
-
-    if (w < LIMITS.weeks.min || w > LIMITS.weeks.max) {
-      e.weeks = `Entre ${LIMITS.weeks.min} et ${LIMITS.weeks.max} semaines.`;
+  const token = () => localStorage.getItem('token');
+  const ensureAuth = () => {
+    const t = token();
+    if (!t) {
+      toast.error('Session expirée. Connecte-toi à nouveau.');
+      logout?.();
+      navigate('/login');
+      return null;
     }
-
-    if (r < LIMITS.reminderDays.min || r > LIMITS.reminderDays.max) {
-      e.reminderDays = `Entre ${LIMITS.reminderDays.min} et ${LIMITS.reminderDays.max} jours.`;
-    }
-
-    return e;
+    return t;
   };
 
-  const focusFirstError = (e: Errors) => {
-    if (e.gameName) { nameRef.current?.focus(); return; }
-    if (e.weeks) { weeksRef.current?.focus(); return; }
-    if (e.reminderDays) { reminderRef.current?.focus(); return; }
-  };
-
-  const showError = (key: keyof Errors) => (touched[key] || submittedOnce) && errors[key];
-
-  const onChangeName = (v: string) => {
-    setGameName(v);
-    if (touched.gameName || submittedOnce) {
-      setErrors(validate({ gameName: v, weeks, reminderDays }));
-    }
-  };
-  const onChangeWeeks = (v: string) => {
-    const clamped = clampInt(v, { min: LIMITS.weeks.min, max: LIMITS.weeks.max, fallback: LIMITS.weeks.min });
-    setWeeks(clamped);
-    if (touched.weeks || submittedOnce) {
-      setErrors(validate({ gameName, weeks: clamped, reminderDays }));
-    }
-  };
-  const onChangeReminder = (v: string) => {
-    const clamped = clampInt(v, { min: LIMITS.reminderDays.min, max: LIMITS.reminderDays.max, fallback: LIMITS.reminderDays.min });
-    setReminderDays(clamped);
-    if (touched.reminderDays || submittedOnce) {
-      setErrors(validate({ gameName, weeks, reminderDays: clamped }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmittedOnce(true);
-
-    const nowErrors = validate();
-    setErrors(nowErrors);
-
-    if (Object.keys(nowErrors).length > 0) {
-      focusFirstError(nowErrors);
-      toast.error('Corrige les champs en rouge.');
-      return;
-    }
-
-    const adminName = String(user?.name || '').trim();
-    if (!adminName) {
-      toast.error("Impossible de récupérer le nom de l'administrateur.");
-      return;
-    }
-
-    setSubmitting(true);
+  // ——— Fetch + check admin
+  const fetchGame = useCallback(async () => {
+    const t = ensureAuth();
+    if (!t || !code) return;
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Non authentifié');
-
-      const res = await fetch(`${apiUrl}/game/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          name: gameName.trim(),
-          weeks,
-          reminderDays,
-          players: includeAdmin ? [adminName] : [],
-        }),
-      });
-
+      setLoading(true);
+      setError(null);
+      const res = await fetch(`${apiUrl}/game/code/${code}`, { headers: { Authorization: `Bearer ${t}` } });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const msg =
-          json?.message ||
-          (!includeAdmin
-            ? "Le serveur refuse une liste de joueurs vide. Active “Je participe” ou adapte l’API."
-            : 'Erreur lors de la création de la partie.');
-        throw new Error(msg);
-      }
+      if (!res.ok) throw new Error(json?.message || 'Erreur de chargement');
 
-      toast.success('Partie créée ✨');
-      navigate(`/lobby/${json.data.code}`);
-    } catch (err: any) {
-      toast.error(err?.message || 'Erreur inconnue.');
+      const data: Game = json.data;
+      const myId = String(user?._id ?? user?.id ?? user?.userId ?? '');
+      const adminIds =
+        (Array.isArray(data.adminIds) && data.adminIds.length > 0
+          ? data.adminIds
+          : (data.adminUsers ?? []).map(u => u._id)
+        ).map(String);
+
+      if (!myId || !adminIds.includes(myId)) {
+        navigate(`/room/${code}`, { replace: true }); // vue joueur
+        return;
+      }
+      setGame(data);
+    } catch (e: any) {
+      setError(e?.message || 'Erreur');
     } finally {
-      setSubmitting(false);
+      setLoading(false);
+    }
+  }, [apiUrl, code, navigate, user, logout]);
+
+  useEffect(() => { void fetchGame(); }, [fetchGame]);
+
+  // ——— Dérivés
+  const myId = String(user?._id ?? user?.id ?? user?.userId ?? '');
+  const adminIdSet = useMemo(
+    () =>
+      new Set<string>(
+        (game?.adminIds?.length
+          ? game.adminIds
+          : (game?.adminUsers ?? []).map(u => u._id)
+        )?.map(String) ?? []
+      ),
+    [game]
+  );
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    let list = game?.players ?? [];
+    if (q) list = list.filter(p => p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q));
+    return [...list].sort((a, b) => a.name.localeCompare(b.name, 'fr')); // tri A→Z
+  }, [game, search]);
+
+  const joinLink = `${window.location.origin}/game/join?code=${game?.code ?? ''}`;
+
+  // ——— Actions API
+  const copyLink = async () => {
+    try { await navigator.clipboard.writeText(joinLink); toast.success('Lien copié ✨'); }
+    catch { toast.error('Impossible de copier le lien'); }
+  };
+
+  // copie juste le code (ex: ABC123)
+  const copyCode = async () => {
+    if (!game?.code) return;
+    try {
+      await navigator.clipboard.writeText(game.code);
+      toast.success('Code copié ✨');
+    } catch {
+      toast.error('Impossible de copier le code');
     }
   };
 
-  const inputBase =
-    'w-full px-4 py-2 rounded-full border focus:ring-2 shadow-sm transition';
-  const ok = Object.keys(validate()).length === 0;
+  // Partage natif si dispo, sinon fallback → copyLink()
+  const shareJoin = async () => {
+    const title = 'Rejoins ma partie Ami Secret';
+    const text  = `Entre le code ${game?.code} pour nous rejoindre 🎁`;
+    const url   = joinLink;
+
+    try {
+      // @ts-ignore (compat TS)
+      if (navigator.share) {
+        // @ts-ignore
+        await navigator.share({ title, text, url });
+      } else {
+        await copyLink();
+      }
+    } catch {
+      await copyLink();
+    }
+  };
+
+  const drawPairs = async () => {
+    if (!game) return;
+    const t = ensureAuth(); if (!t) return;
+    try {
+      const res = await fetch(`${apiUrl}/game/${game._id}/draw`, { method: 'POST', headers: { Authorization: `Bearer ${t}` } });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.message || 'Le tirage a échoué');
+      toast.success('🎉 Tirage effectué !');
+    } catch (e: any) { toast.error(e?.message || 'Erreur'); }
+  };
+
+  const canRemove = (p: Player) => !adminIdSet.has(String(p._id)) && String(p._id) !== myId;
+
+  const removePlayer = async (playerId: string) => {
+    if (!game) return;
+    const t = ensureAuth(); if (!t) return;
+    if (!confirm('Retirer ce joueur de la partie ?')) return;
+    try {
+      const res = await fetch(`${apiUrl}/game/${game._id}/player/${playerId}`, {
+        method: 'DELETE', headers: { Authorization: `Bearer ${t}` },
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.message || 'Retrait impossible');
+      toast.success('Joueur retiré.');
+      void fetchGame();
+    } catch (e: any) { toast.error(e?.message || 'Erreur'); }
+  };
+
+  // ——— Profil joueur (modal)
+  const openProfile = async (player: Player) => {
+    const t = ensureAuth(); if (!t) return;
+    try {
+      setProfileLoading(true);
+      setProfileOpen(true);
+      setProfile(null);
+      setProfileGrad(GRADS[hashIdx(player._id + player.name)]);
+      const res = await fetch(`${apiUrl}/user/preferences/${player._id}`, {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.message || 'Chargement du profil impossible');
+      setProfile(json.data as PlayerDetails);
+    } catch (e: any) {
+      toast.error(e?.message || 'Erreur');
+      setProfileOpen(false);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const closeProfile = () => {
+    setProfileOpen(false);
+    setProfile(null);
+  };
+
+  // ——— Renders
+  if (loading) {
+    return (
+      <div className="min-h-screen grid place-items-center">
+        <div className="flex items-center gap-3 text-green-800">
+          <Bouncy size="56" speed="1.4" color="green" />
+          <span className="font-semibold">Chargement du lobby…</span>
+        </div>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="min-h-screen grid place-items-center p-6 text-center">
+        <div>
+          <h2 className="text-2xl font-bold text-red-700 mb-2">Erreur</h2>
+          <p className="text-gray-700 mb-4">{error}</p>
+          <button onClick={() => fetchGame()} className="px-4 py-2 rounded-full bg-green-600 text-white font-semibold">Réessayer</button>
+        </div>
+      </div>
+    );
+  }
+  if (!game) return null;
 
   return (
-    <div className="min-h-screen bg-yellow-50 py-20 px-4 flex justify-center items-start">
-      <motion.form
-        onSubmit={handleSubmit}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-xl bg-white rounded-3xl shadow-2xl p-10 border border-yellow-300"
-        noValidate
-        aria-labelledby="create-game-title"
-      >
-        <h1 id="create-game-title" className="text-3xl font-extrabold text-green-800 mb-8 text-center">
-          🎉 Créer une partie
-        </h1>
-
-        {/* Nom */}
-        <div className="mb-6">
-          <label htmlFor="game-name" className="block text-sm font-semibold text-green-900 mb-2">
-            Nom de la partie
-          </label>
-          <input
-            id="game-name"
-            ref={nameRef}
-            type="text"
-            value={gameName}
-            onChange={(e) => onChangeName(e.target.value)}
-            onBlur={() => setTouched((t) => ({ ...t, gameName: true }))}
-            placeholder="Ex: Camp d'été 2025"
-            className={
-              inputBase +
-              ' ' +
-              (showError('gameName')
-                ? 'border-red-300 focus:ring-red-300'
-                : 'border-yellow-300 focus:ring-green-400')
-            }
-            aria-invalid={!!showError('gameName')}
-            aria-describedby="name-help name-error"
-            disabled={submitting}
-            maxLength={LIMITS.gameName.max}
-            required
-          />
-          <div className="mt-1 flex items-center justify-between text-xs">
-            <p id="name-help" className="text-gray-500">
-              {`Entre ${LIMITS.gameName.min} et ${LIMITS.gameName.max} caractères.`}
-            </p>
-            <p className="text-gray-400">{gameName.trim().length}/{LIMITS.gameName.max}</p>
+    <div className="bg-yellow-50 min-h-screen py-12 px-4 relative">
+      <div className="mt-20 max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Détails */}
+        <div className="md:col-span-1 bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
+          <div className="flex items-start justify-between">
+            <h2 className="text-2xl font-bold text-green-800">Détails de la partie</h2>
+            <span className="text-md px-2 py-1 rounded-full bg-red-100 text-red-800 font-bold self-center">
+              ADMIN
+            </span>
           </div>
-          {showError('gameName') && (
-            <p id="name-error" className="mt-1 text-xs text-red-600">{errors.gameName}</p>
-          )}
+
+          {/* code mis en avant + boutons */}
+          <div className="mt-4 rounded-xl border border-yellow-200 bg-yellow-50/50 p-4">
+            <p className="text-xs uppercase tracking-wide text-green-900/70 font-semibold">Code</p>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="font-mono text-2xl font-extrabold text-green-900">{game.code}</span>
+              <button
+                onClick={copyCode}
+                className="ml-auto inline-flex items-center gap-2 rounded-full border border-yellow-300 bg-white px-3 py-1.5 text-xs font-semibold text-yellow-900 hover:bg-yellow-100"
+                title="Copier le code"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" className="opacity-80" fill="none">
+                  <path d="M9 9h8v8H9z" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M7 7h8M7 7v8" stroke="currentColor" strokeWidth="1.8" opacity=".6" />
+                </svg>
+                Copier
+              </button>
+            </div>
+
+            <div className="mt-3 flex flex-col gap-2">
+              <button
+                onClick={shareJoin}
+                className="w-full rounded-full bg-white border border-green-300 text-green-900 hover:bg-green-50 font-semibold px-4 py-2 inline-flex items-center justify-center gap-2"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" className="opacity-80" fill="none">
+                  <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M12 4v12M12 4l-4 4M12 4l4 4" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+                Partager le lien
+              </button>
+              <button
+                onClick={copyLink}
+                className="w-full rounded-full bg-yellow-100 hover:bg-yellow-200 text-yellow-900 font-semibold px-4 py-2 border border-yellow-300 inline-flex items-center justify-center gap-2"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" className="opacity-80" fill="none">
+                  <path d="M10.5 13.5l3-3" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M7 17a4 4 0 0 1 0-6l3-3a4 4 0 1 1 6 6l-1 1" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+                Copier le lien
+              </button>
+            </div>
+          </div>
+
+          {/* infos */}
+          <ul className="text-sm text-gray-700 space-y-2 mt-4">
+            <li><strong>Nom :</strong> {game.name}</li>
+            <li><strong>Durée :</strong> {game.numberOfWeeks} semaines</li>
+            <li><strong>Rappel :</strong> {game.reminderDayBefore} jours avant</li>
+          </ul>
+
+          {/* action principale */}
+          <div className="mt-5">
+            <button
+              onClick={drawPairs}
+              className="w-full py-2 rounded-full bg-green-600 hover:bg-green-700 text-white font-bold shadow"
+            >
+              Lancer le tirage au sort
+            </button>
+          </div>
         </div>
 
-        {/* Semaines */}
-        <div className="mb-6">
-          <label htmlFor="weeks" className="block text-sm font-semibold text-green-900 mb-2">
-            Durée (semaines)
-          </label>
-          <input
-            id="weeks"
-            ref={weeksRef}
-            type="number"
-            min={LIMITS.weeks.min}
-            max={LIMITS.weeks.max}
-            value={weeks}
-            onChange={(e) => onChangeWeeks(e.target.value)}
-            onBlur={() => setTouched((t) => ({ ...t, weeks: true }))}
-            className={
-              inputBase +
-              ' ' +
-              (showError('weeks')
-                ? 'border-red-300 focus:ring-red-300'
-                : 'border-yellow-300 focus:ring-green-400')
-            }
-            aria-invalid={!!showError('weeks')}
-            aria-describedby="weeks-help weeks-error"
-            disabled={submitting}
-            inputMode="numeric"
-            required
-          />
-          <p id="weeks-help" className="mt-1 text-xs text-gray-500">
-            {`Entre ${LIMITS.weeks.min} et ${LIMITS.weeks.max} semaines.`}
-          </p>
-          {showError('weeks') && (
-            <p id="weeks-error" className="mt-1 text-xs text-red-600">{errors.weeks}</p>
-          )}
-        </div>
+        {/* Participants */}
+        <div className="md:col-span-2 bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
+          <h2 className="text-2xl font-bold text-green-800 mb-4">👥 Participants ({game.players.length})</h2>
 
-        {/* Rappel */}
-        <div className="mb-6">
-          <label htmlFor="reminder" className="block text-sm font-semibold text-green-900 mb-2">
-            Jours avant le rappel courriel
-          </label>
-          <input
-            id="reminder"
-            ref={reminderRef}
-            type="number"
-            min={LIMITS.reminderDays.min}
-            max={LIMITS.reminderDays.max}
-            value={reminderDays}
-            onChange={(e) => onChangeReminder(e.target.value)}
-            onBlur={() => setTouched((t) => ({ ...t, reminderDays: true }))}
-            className={
-              inputBase +
-              ' ' +
-              (showError('reminderDays')
-                ? 'border-red-300 focus:ring-red-300'
-                : 'border-yellow-300 focus:ring-green-400')
-            }
-            aria-invalid={!!showError('reminderDays')}
-            aria-describedby="reminder-help reminder-error"
-            disabled={submitting}
-            inputMode="numeric"
-            required
-          />
-          <p id="reminder-help" className="mt-1 text-xs text-gray-500">
-            {`Entre ${LIMITS.reminderDays.min} et ${LIMITS.reminderDays.max} jours.`}
-          </p>
-          {showError('reminderDays') && (
-            <p id="reminder-error" className="mt-1 text-xs text-red-600">{errors.reminderDays}</p>
-          )}
-        </div>
-
-        {/* Admin joue ? */}
-        <div className="mb-6">
-          <label className="inline-flex items-center text-green-900 font-semibold">
+          {/* Recherche */}
+          <div className='flex flex-col lg:flex-row gap-3'>
             <input
-              type="checkbox"
-              checked={includeAdmin}
-              onChange={() => setIncludeAdmin((v) => !v)}
-              className="mr-2 accent-green-600"
-              disabled={submitting}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Recherche (nom ou courriel)"
+              className="px-3 py-2 rounded-xl w-full border focus:outline-none focus:ring-2 focus:ring-green-500"
             />
-            Je participe moi-même à la partie
-          </label>
-          <p className="mt-2 text-xs text-gray-600">
-            {includeAdmin
-              ? 'Tu seras ajouté aux joueurs au moment de la création.'
-              : 'Tu ne seras pas joueur — partage le code pour que les autres vous rejoignent.'}
-          </p>
-        </div>
+          </div>
 
-        {/* Bannière d’info rapide */}
-        <div className="mb-6 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-xs text-yellow-900">
-          Règles : {LIMITS.weeks.min}–{LIMITS.weeks.max} semaines • {LIMITS.reminderDays.min}–{LIMITS.reminderDays.max} jours de rappel • Nom {LIMITS.gameName.min}–{LIMITS.gameName.max} caractères.
-        </div>
+          {/* En-têtes (desktop) */}
+          <div className="hidden md:grid grid-cols-[1fr,1fr] px-4 py-2 text-[11px] font-semibold text-green-900/80 uppercase tracking-wide mt-4">
+            <div>Participant</div>
+            <div className="justify-self-end">Actions</div>
+          </div>
 
-        <button
-          type="submit"
-          disabled={submitting || !ok}
-          className={
-            'w-full py-3 rounded-full text-white font-bold shadow-lg transition ' +
-            (submitting || !ok
-              ? 'bg-green-400 cursor-not-allowed'
-              : 'bg-green-500 hover:bg-green-600')
-          }
+          {/* Liste */}
+          <div className="mt-2">
+            <ul className="space-y-3" role="list">
+              {filtered.length === 0 ? (
+                <li className="text-sm text-gray-600">Aucun participant ne correspond aux critères.</li>
+              ) : (
+                filtered.map((p) => {
+                  const grad = GRADS[hashIdx(p._id + p.name)];
+                  const isAdmin = adminIdSet.has(String(p._id));
+                  const isMe = String(p._id) === myId;
+
+                  return (
+                    <li
+                      key={p._id}
+                      className="rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition"
+                    >
+                      <div className="grid items-center gap-3 p-4 md:grid-cols-[1fr,1fr]">
+                        {/* Participant */}
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className={`w-10 h-10 rounded-full bg-gradient-to-br ${grad} text-white grid place-items-center text-xs font-bold shrink-0`}
+                          >
+                            {initials(p.name)}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-green-900 truncate">{p.name}</p>
+                              {isAdmin && (
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-800 border border-green-200">
+                                  ADMIN
+                                </span>
+                              )}
+                              {isMe && (
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-50 text-gray-700 border">
+                                  MOI
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 truncate">{p.email}</p>
+                          </div>
+                        </div>
+
+                        {/* Actions (desktop) */}
+                        <div className="hidden md:flex items-center gap-2 justify-self-end">
+                          <button
+                            onClick={() => openProfile(p)}
+                            className="h-8 px-3 text-xs rounded-full border border-green-200 bg-green-50 text-green-800 hover:bg-green-100"
+                          >
+                            Détails
+                          </button>
+                          <button
+                            onClick={() => removePlayer(p._id)}
+                            disabled={!canRemove(p)}
+                            title={!canRemove(p) ? 'Impossible de retirer un admin ou vous-même' : 'Retirer ce joueur'}
+                            className={
+                              'h-8 px-3 text-xs rounded-full border ' +
+                              (canRemove(p)
+                                ? 'border-red-200 bg-red-50 text-red-800 hover:bg-red-100'
+                                : 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed')
+                            }
+                          >
+                            Retirer
+                          </button>
+                        </div>
+
+                        {/* Actions (mobile) */}
+                        <div className="mt-2 md:hidden grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-2">
+                          <button
+                            onClick={() => openProfile(p)}
+                            className="h-9 px-3 text-xs rounded-full border border-green-200 bg-green-50 text-green-800 hover:bg-green-100"
+                          >
+                            Détails
+                          </button>
+                          <button
+                            onClick={() => canRemove(p) && removePlayer(p._id)}
+                            disabled={!canRemove(p)}
+                            title={!canRemove(p) ? 'Impossible de retirer un admin ou vous-même' : 'Retirer ce joueur'}
+                            className={
+                              'h-9 px-3 text-xs rounded-full border ' +
+                              (canRemove(p)
+                                ? 'border-red-200 bg-red-50 text-red-800 hover:bg-red-100'
+                                : 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed')
+                            }
+                          >
+                            Retirer
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })
+              )}
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal Profil joueur */}
+      {profileOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 grid place-items-center z-50"
+          onClick={closeProfile}
         >
-          {submitting ? 'Création…' : 'Lancer la partie'}
-        </button>
-      </motion.form>
+          <div
+            className="bg-white rounded-2xl p-6 shadow-2xl w-[min(680px,92vw)] relative"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="player-profile-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={closeProfile}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-xl"
+              aria-label="Fermer"
+            >
+              ×
+            </button>
 
-      <ToastContainer position="top-center" autoClose={4000} theme="colored" />
+            {/* Header profil */}
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${profileGrad} text-white grid place-items-center text-sm font-bold`}>
+                {initials(profile?.name || '')}
+              </div>
+              <div className="min-w-0">
+                <h3 id="player-profile-title" className="text-lg font-bold text-green-800 truncate">
+                  {profile?.name || 'Profil'}
+                </h3>
+                <p className="text-xs text-gray-500 truncate">{profile?.email}</p>
+              </div>
+            </div>
+
+            {/* Contenu */}
+            <div className="mt-5">
+              {profileLoading ? (
+                <div className="flex items-center gap-3 text-green-800">
+                  <Bouncy size="36" speed="1.2" color="green" />
+                  <span className="text-sm">Chargement du profil…</span>
+                </div>
+              ) : !profile ? (
+                <p className="text-sm text-gray-600">Profil introuvable.</p>
+              ) : (
+                <div className="space-y-5">
+                  {profile.bio && (
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-green-900/70 font-semibold mb-1">À propos</p>
+                      <p className="text-sm text-gray-700">{profile.bio}</p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="rounded-xl border p-4">
+                      <p className="text-xs uppercase tracking-wide text-green-900/70 font-semibold mb-2">Aime</p>
+                      {profile.likes?.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {profile.likes.map((l, i) => (
+                            <span key={i} className="px-2 py-1 text-xs rounded-full bg-green-50 text-green-800 border border-green-200">
+                              {l}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">—</p>
+                      )}
+                    </div>
+
+                    <div className="rounded-xl border p-4">
+                      <p className="text-xs uppercase tracking-wide text-green-900/70 font-semibold mb-2">N’aime pas</p>
+                      {profile.dislikes?.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {profile.dislikes.map((d, i) => (
+                            <span key={i} className="px-2 py-1 text-xs rounded-full bg-red-50 text-red-800 border border-red-200">
+                              {d}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">—</p>
+                      )}
+                    </div>
+
+                    <div className="rounded-xl border p-4">
+                      <p className="text-xs uppercase tracking-wide text-green-900/70 font-semibold mb-2">Couleur préférée</p>
+                      <p className="text-sm text-gray-700">{profile.favoriteColor || '—'}</p>
+                    </div>
+
+                    <div className="rounded-xl border p-4">
+                      <p className="text-xs uppercase tracking-wide text-green-900/70 font-semibold mb-2">Animal préféré</p>
+                      <p className="text-sm text-gray-700">{profile.favoriteAnimal || '—'}</p>
+                    </div>
+
+                    <div className="sm:col-span-2 rounded-xl border p-4">
+                      <p className="text-xs uppercase tracking-wide text-green-900/70 font-semibold mb-2">Allergies</p>
+                      {profile.allergies?.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {profile.allergies.map((a, i) => (
+                            <span key={i} className="px-2 py-1 text-xs rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                              {a}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">Aucune</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer modal */}
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={closeProfile}
+                className="px-4 py-2 rounded-full bg-white border hover:bg-gray-50 text-gray-800 font-semibold"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -149,7 +149,7 @@ export default function Dashboard() {
           {games.map((game) => (
             <motion.div
               key={game._id}
-              whileHover={{ scale: 1.03 }}
+              whileHover={{ scale: 1.03 }} 
               className="bg-white border rounded-xl shadow-md p-5 cursor-pointer hover:shadow-lg transition relative"
               onClick={() => navigate(`/lobby/${game.code}`)}
               role="button"
