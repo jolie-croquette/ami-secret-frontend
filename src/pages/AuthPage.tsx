@@ -26,16 +26,9 @@ export default function AuthPage() {
     waveform.register();
   }, []);
 
-  // 🔒 Blocage: si déjà connecté → redirige
-  useEffect(() => {
-    if (auth?.user) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [auth?.user, navigate]);
-
   const toggleForm = () => {
     if (isSubmitting) return;
-    setIsLogin(!isLogin);
+    setIsLogin(v => !v);
     setForm({ name: '', email: '', password: '' });
   };
 
@@ -54,14 +47,14 @@ export default function AuthPage() {
 
     setIsSubmitting(true);
     try {
-      if (isLogin) {
-        await auth.login(email, password);
-        toast.success("Connexion réussie !");
-        navigate('/dashboard', { replace: true });
-      } else {
+      if (!isLogin) {
         await auth.signup(name, email, password);
         toast.success("Compte créé avec succès !");
         navigate('/onboard', { replace: true });
+      } else {
+        await auth.login(email, password);
+        toast.success("Connexion réussie !");
+        navigate('/dashboard', { replace: true });
       }
     } catch (err: any) {
       const msg = (err?.message || '').toLowerCase();

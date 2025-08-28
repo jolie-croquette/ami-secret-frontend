@@ -26,7 +26,7 @@ export default function Header() {
   const handleLogout = () => {
     auth?.logout?.();
     setDropdownOpen(false);
-    navigate('/login');
+    navigate('/', {replace: true});
   };
 
   // Fermer le menu si clic à l'extérieur
@@ -77,7 +77,7 @@ export default function Header() {
   return (
     <header className="w-full fixed top-0 left-0 z-50 bg-green-50/80 backdrop-blur-md shadow-md">
       <div className="max-w-screen-xl mx-auto flex justify-between items-center px-6 py-3">
-        <Link to="/dashboard" className="flex items-center gap-3 group">
+        <Link to={auth?.user ? '/dashboard' : '/'} className="flex items-center gap-3 group">
           <span className="text-xl md:text-2xl font-extrabold text-green-900 tracking-tight group-hover:opacity-90">
             <i className="fa-solid fa-gift"></i> Ami(e) Secret
           </span>
@@ -123,6 +123,14 @@ export default function Header() {
                     transition={{ duration: 0.18 }}
                     className="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-lg border border-yellow-300 z-50 p-1"
                   >
+                    <Link
+                      to="/profile"
+                      onClick={closeDropdown}
+                      role="menuitem"
+                      className="block px-4 py-2 text-sm text-green-900 hover:bg-yellow-50 rounded-lg"
+                    >
+                      <i className="fa-solid fa-user me-2" /> Mon profil
+                    </Link>
                     <Link
                       to="/dashboard"
                       onClick={closeDropdown}

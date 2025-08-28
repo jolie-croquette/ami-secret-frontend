@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Bouncy } from 'ldrs/react';
 import 'ldrs/react/Bouncy.css';
 import { toast, ToastContainer } from 'react-toastify';
+import OnboardingAlert from '@/components/OnBoardingAlertProps';
 
 interface Game {
   _id: string;
@@ -22,6 +23,7 @@ export default function Dashboard() {
   const [games, setGames] = useState<Game[]>([]);
   const navigate = useNavigate();
   const abortRef = useRef<AbortController | null>(null);
+  const [isUserBoarded, setIsUserBoarded] = useState<boolean>(true);
 
   const apiUrl = useMemo(() => import.meta.env.VITE_API_URL as string, []);
   const token = useMemo(() => localStorage.getItem('token'), [user]);
@@ -80,6 +82,7 @@ export default function Dashboard() {
           throw err;
         }
         setGames(Array.isArray(json?.data) ? json.data : []);
+        setIsUserBoarded(user.isBoarded);
       } catch (err: any) {
         if (err?.name === 'AbortError') return; // navigation / re-render
         if (err?.status === 401) {
@@ -108,7 +111,10 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-yellow-50 px-6 py-12 text-green-900">
+    <div className="min-h-screen bg-yellow-50 px-6 py-12 text-green-900 mt-14">
+      {!isUserBoarded && (
+        <OnboardingAlert className="max-w-4xl mx-auto mb-6" />
+      )}
       <h1 className="mt-14 text-3xl font-extrabold text-center mb-8">Bienvenue, {user?.name} 👋</h1>
 
       <div className="flex justify-center gap-4 my-10">

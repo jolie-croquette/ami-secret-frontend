@@ -8,6 +8,7 @@ import RequireNoAuth from '@/components/RequireNoAuth';
 import { Bouncy } from 'ldrs/react';
 import 'ldrs/react/Bouncy.css';
 import PlayerLobby from './pages/PlayerLobby';
+import PlayerProfilePage from './pages/Profile';
 
 // Lazy load
 const AuthPage = lazy(() => import('@/pages/AuthPage'));
@@ -53,6 +54,15 @@ export const router = createBrowserRouter([
             <AuthPage />
           </RequireNoAuth>
         ) 
+      },
+
+      {
+        path: '/profile',
+        element: withSuspense(
+          <RequireAuth>
+            <PlayerProfilePage />
+          </RequireAuth>
+        )
       },
 
       // onboarding préférences
