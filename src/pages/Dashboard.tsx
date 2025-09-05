@@ -23,7 +23,8 @@ export default function Dashboard() {
   const [games, setGames] = useState<Game[]>([]);
   const navigate = useNavigate();
   const abortRef = useRef<AbortController | null>(null);
-  const [isUserBoarded, setIsUserBoarded] = useState<boolean>(true);
+
+  const auth = useContext(AuthContext);
 
   const apiUrl = useMemo(() => import.meta.env.VITE_API_URL as string, []);
   const token = useMemo(() => localStorage.getItem('token'), [user]);
@@ -82,7 +83,6 @@ export default function Dashboard() {
           throw err;
         }
         setGames(Array.isArray(json?.data) ? json.data : []);
-        setIsUserBoarded(user.isBoarded);
       } catch (err: any) {
         if (err?.name === 'AbortError') return; // navigation / re-render
         if (err?.status === 401) {
@@ -98,7 +98,19 @@ export default function Dashboard() {
       }
     };
 
+    const refreshMe = async () => {
+      if (!token) return;
+      const res = await fetch(`${apiUrl}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && json?.data?.user && typeof auth?.setUser === 'function') {
+        auth.setUser(json.data.user);
+      }
+    };
+
     fetchGames();
+    refreshMe();
 
     return () => controller.abort();
   }, [user, apiUrl, token, logout, navigate]);
@@ -112,12 +124,12 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-yellow-50 px-6 py-12 text-green-900 mt-14">
-      {!isUserBoarded && (
+      {!user?.onBoarded && (
         <OnboardingAlert className="max-w-4xl mx-auto mb-6" />
       )}
       <h1 className="mt-14 text-3xl font-extrabold text-center mb-8">Bienvenue, {user?.name} 👋</h1>
 
-      <div className="flex justify-center gap-4 my-10">
+      <div className="flex flex-col gap-4 md:flex-row justify-center">
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -162,8 +174,8 @@ export default function Dashboard() {
               aria-label={`Ouvrir ${game.name}`}
             >
               <h2 className="text-xl font-bold mb-1 truncate">{game.name}</h2>
-              <p className="text-sm text-gray-600">Code : <span className="font-mono">{game.code}</span></p>
-              <p className="text-sm text-gray-600">Durée : {game.numberOfWeeks} semaines</p>
+              <p className="text-md text-gray-600">Code : <span className="font-bold">{game.code}</span></p>
+              <p className="text-md text-gray-600">Durée : {game.numberOfWeeks} semaines</p>
 
               {/* Quitter button (does not trigger card navigation) */}
               <button

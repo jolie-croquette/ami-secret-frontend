@@ -6,27 +6,29 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  gameId?: string;   // <-- Add this line
-  isAdmin?: boolean; // <-- And this line
+  gameId?: string;
+  isAdmin?: boolean;
+  onBoarded?: boolean; // ou isBoarded?: boolean
 }
 
 type AuthContextType = {
-  user: User | null; // Allow null here
+  user: User | null;
   signup: (name: string, email: string, password: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null); // Allow null here
+  const [user, setUserState] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchUser = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
-      setUser(null);
+      setUserState(null);
       setLoading(false);
       return;
     }
@@ -38,18 +40,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (res.ok) {
         const json = await res.json();
-        setUser(json.data);
+        // selon ton backend: json.data ou json.data.user
+        const u = json?.data?.user ?? json?.data ?? null;
+        setUserState(u);
       } else {
-        setUser(null);
+        setUserState(null);
       }
     } catch (err) {
       console.error('Erreur lors de la récupération de l’utilisateur :', err);
-      setUser(null);
+      setUserState(null);
     } finally {
       setLoading(false);
     }
   };
-
 
   useEffect(() => {
     fetchUser();
@@ -57,10 +60,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const handleAuth = async (res: Response) => {
     const json = await res.json();
-    const token = json.data?.token;
+    const token = json?.data?.token ?? json?.token;
     if (!token) throw new Error("Token manquant dans la réponse.");
     localStorage.setItem('token', token);
-    await fetchUser();
+
+    // si l’API renvoie déjà l’utilisateur, profite-en pour mettre à jour tout de suite
+    const u = json?.data?.user ?? json?.user ?? null;
+    if (u) {
+      setUserState(u);
+      setLoading(false);
+    } else {
+      await fetchUser();
+    }
   };
 
   const signup = async (name: string, email: string, password: string) => {
@@ -89,11 +100,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
-    setUser(null);
+    setUserState(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, signup, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        signup,
+        login,
+        logout,
+        setUser: setUserState, // ✅ on expose le setter réel
+      }}
+    >
       {!loading && children}
     </AuthContext.Provider>
   );

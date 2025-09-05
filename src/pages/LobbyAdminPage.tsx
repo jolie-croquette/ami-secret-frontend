@@ -427,7 +427,7 @@ export default function LobbyAdminPage() {
           <div className="flex flex-col items-start justify-between">
             <button
               onClick={() => navigate(`/lobby/${game.code}`)}
-              className="inline-flex items-center gap-2 rounded-full bg-white border border-green-300 text-green-900 px-3 py-1.5 text-xs font-semibold hover:bg-green-50"
+              className="inline-flex items-center gap-2 rounded-full bg-green-50 border border-green-300 text-green-900 px-3 py-1.5 text-xs font-semibold hover:bg-green-50"
               title="Basculer vers la vue joueur"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -624,7 +624,7 @@ export default function LobbyAdminPage() {
                         <div className="hidden md:flex items-center gap-2 justify-self-end">
                           <button
                             onClick={() => openProfile(p)}
-                            className="h-8 px-3 text-xs rounded-full border border-green-200 bg-green-50 text-green-800 hover:bg-green-100"
+                            className="h-8 px-3 text-xs rounded-full border border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100"
                           >
                             Détails
                           </button>
@@ -670,7 +670,7 @@ export default function LobbyAdminPage() {
                         <div className="mt-2 md:hidden grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-2">
                           <button
                             onClick={() => openProfile(p)}
-                            className="h-9 px-3 text-xs rounded-full border border-green-200 bg-green-50 text-green-800 hover:bg-green-100"
+                            className="h-9 px-3 text-xs rounded-full border border-cyan-200 bg-cyan-50 text-cyan-800"
                           >
                             Détails
                           </button>

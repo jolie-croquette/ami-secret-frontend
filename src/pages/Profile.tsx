@@ -146,14 +146,13 @@ export default function PlayerProfilePage() {
         const res = await fetch(`${apiUrl}/user/preferences/${meId}`, { headers: { Authorization: `Bearer ${token}` } });
         const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json?.message || 'Impossible de charger le profil');
-        const data = json.data || {};
+        const data = json.data.user || {};
         setPrefs({
           likes: Array.isArray(data.likes) ? data.likes : [],
           dislikes: Array.isArray(data.dislikes) ? data.dislikes : [],
           allergies: Array.isArray(data.allergies) ? data.allergies : [],
           favoriteColor: data.favoriteColor || '',
           favoriteAnimal: data.favoriteAnimal || '',
-          bio: data.bio || '',
         });
         // Optionnel: si tu exposes un /user/me, tu peux rafraîchir name/email ici
       } catch (e: any) {

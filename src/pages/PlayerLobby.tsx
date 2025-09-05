@@ -166,11 +166,12 @@ export default function PlayerLobby() {
       const res = await fetch(`${apiUrl}/user/preferences/${player._id}`, { headers: { Authorization: `Bearer ${t}` } });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.message || 'Chargement du profil impossible');
-      setProfile(json.data as PlayerDetails);
+      setProfile(json.data.user as PlayerDetails);
     } catch (e: any) {
       toast.error(e?.message || 'Erreur');
       setProfileOpen(false);
     } finally {
+      console.log(profile)
       setProfileLoading(false);
     }
   };
@@ -236,7 +237,7 @@ export default function PlayerLobby() {
             {isMeAdmin && (
               <button
                 onClick={() => navigate(`/lobby/${game.code}/admin`)}
-                className="inline-flex items-center gap-2 rounded-full bg-red-100 border border-red-300 text-red-900 px-3 py-1.5 text-xs font-semibold hover:bg-red-50"
+                className="inline-flex items-center gap-2 rounded-full bg-blue-100 border border-blue-300 text-blue-900 px-3 py-1.5 text-xs font-semibold hover:bg-blue-50"
                 title="Passer à la vue admin"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -369,7 +370,7 @@ export default function PlayerLobby() {
                         <div className="justify-self-end">
                           <button
                             onClick={() => openProfile(p)}
-                            className="h-8 px-3 text-xs rounded-full border border-green-200 bg-green-50 text-green-800 hover:bg-green-100 hidden md:inline"
+                            className="h-8 px-3 text-xs rounded-full border border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100 hidden md:inline"
                           >
                             Détails
                           </button>
@@ -379,7 +380,7 @@ export default function PlayerLobby() {
                         <div className="mt-2 md:hidden grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-2">
                           <button
                             onClick={() => openProfile(p)}
-                            className="h-9 px-3 text-xs rounded-full border border-green-200 bg-green-50 text-green-800 hover:bg-green-100"
+                            className="h-9 px-3 text-xs rounded-full border border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100"
                           >
                             Détails
                           </button>
