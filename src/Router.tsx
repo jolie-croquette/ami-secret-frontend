@@ -5,8 +5,7 @@ import { Suspense, type ReactNode, type ReactElement } from 'react';
 import Layout from '@/pages/layout/Layout';
 import RequireAuth from '@/components/RequireAuth';
 import RequireNoAuth from '@/components/RequireNoAuth';
-import { Bouncy } from 'ldrs/react';
-import 'ldrs/react/Bouncy.css';
+import { CampLoader } from '@/components/CampLoader';
 import PlayerLobby from './pages/PlayerLobby';
 import PlayerProfilePage from './pages/Profile';
 
@@ -19,25 +18,17 @@ const LobbyAdminPage = lazy(() => import('@/pages/LobbyAdminPage'));
 const JoinGamePage = lazy(() => import('@/pages/JoinGame'));
 
 const NotFound = () => (
-  <div className="min-h-screen flex items-center justify-center text-center p-8">
-    <div>
-      <h1 className="text-3xl font-extrabold mb-2">Oups, page introuvable</h1>
-      <p className="text-gray-600 mb-6">Le lien est peut-être expiré ou l'URL incorrecte.</p>
-      <a href="/dashboard" className="px-5 py-2 rounded-full bg-green-600 text-white font-semibold">
-        Retour au tableau de bord
-      </a>
+  <div className="min-h-screen flex items-center justify-center bg-camp-cream bg-topo text-center p-8">
+    <div className="card-sign p-10 max-w-md">
+      <h1 className="font-display text-4xl font-black text-camp-pine-dark mb-2">Page introuvable</h1>
+      <p className="text-camp-bark mb-6">Le lien est peut-être expiré ou l'adresse incorrecte.</p>
+      <a href="/dashboard" className="btn-primary inline-flex">Retour au tableau de bord</a>
     </div>
   </div>
 );
 
 const withSuspense = (el: ReactNode): ReactElement => (
-  <Suspense fallback={<div className="min-h-screen flex items-center justify-center">
-    <div className='min-h-[240px] flex items-start justify-center mt-20'>
-      <Bouncy size="100" speed="1.5" color="green" />
-    </div>
-  </div>}>
-    {el}
-  </Suspense>
+  <Suspense fallback={<CampLoader />}>{el}</Suspense>
 )
 
 export const router = createBrowserRouter([

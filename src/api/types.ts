@@ -48,6 +48,8 @@ export interface GameDetails {
   adminUsers: GamePlayer[];
   adminIds: string[];
   isAdmin: boolean;
+  isMember: boolean;
+  myWeeksGifted: number[];
   players: GamePlayer[];
 }
 
