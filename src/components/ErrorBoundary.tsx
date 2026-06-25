@@ -13,7 +13,6 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
   }
 
   componentDidCatch(error: unknown) {
-    // eslint-disable-next-line no-console
     console.error('[ErrorBoundary]', error);
   }
 
