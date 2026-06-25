@@ -2,36 +2,111 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   Ami Secret — Thème « Carnet de Camp »
+   Palette parchemin / sapin / feu de camp, sans emoji.
+   ============================================================ */
 
-body {
-}
-
-/* Définition des couleurs en variables CSS */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 47.4% 11.2%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 47.4% 11.2%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 47.4% 11.2%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 100% 50%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 215 20.2% 65.1%;
+    --radius: 1rem;
+
+    /* Tokens sémantiques (mappés sur la palette camp, en HSL) */
+    --background: 44 60% 92%;        /* crème parchemin */
+    --foreground: 32 29% 13%;        /* encre chaude     */
+    --card: 44 55% 96%;
+    --card-foreground: 32 29% 13%;
+    --primary: 164 33% 27%;          /* sapin            */
+    --primary-foreground: 44 60% 95%;
+    --secondary: 200 45% 42%;        /* lac              */
+    --secondary-foreground: 44 60% 95%;
+    --muted: 41 45% 85%;
+    --muted-foreground: 30 18% 38%;
+    --accent: 24 73% 56%;            /* feu de camp      */
+    --accent-foreground: 44 60% 96%;
+    --destructive: 353 51% 46%;      /* baie             */
+    --destructive-foreground: 44 60% 96%;
+    --border: 41 45% 74%;
+    --input: 41 45% 74%;
+    --ring: 42 86% 63%;              /* soleil           */
   }
 
+  * {
+    border-color: hsl(var(--border));
+  }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply bg-camp-cream text-camp-ink font-body antialiased;
+    background-image:
+      radial-gradient(1200px 600px at 50% -10%, rgba(242, 193, 78, 0.18), transparent 60%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  /* ── Étiquette manuscrite (annotations, sous-titres) ──────── */
+  .label-hand {
+    @apply font-hand text-camp-ember-dark;
+  }
+
+  /* ── Bouton « bois » ──────────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-body font-extrabold
+           px-6 py-3 transition-all duration-150 select-none
+           disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none
+           focus-visible:ring-4 focus-visible:ring-camp-sun/60;
+  }
+  .btn-primary {
+    @apply btn bg-camp-pine text-camp-cream shadow-sign
+           hover:bg-camp-pine-dark hover:-translate-y-0.5 active:translate-y-0 active:shadow-sign-sm;
+  }
+  .btn-ember {
+    @apply btn bg-camp-ember text-white shadow-sign
+           hover:bg-camp-ember-dark hover:-translate-y-0.5 active:translate-y-0 active:shadow-sign-sm;
+  }
+  .btn-ghost {
+    @apply btn bg-transparent text-camp-pine border-2 border-camp-pine/30
+           hover:bg-camp-pine/10;
+  }
+
+  /* ── Carte « pancarte de bois » avec couture en pointillé ─── */
+  .card-sign {
+    @apply relative rounded-3xl bg-camp-cream/95 border-2 border-camp-bark/30 shadow-badge
+           backdrop-blur-sm;
+  }
+  .card-stitch {
+    @apply relative rounded-3xl bg-camp-card border-2 border-dashed border-camp-bark/40 p-6;
+  }
+
+  /* ── Champ de formulaire ──────────────────────────────────── */
+  .field {
+    @apply w-full rounded-2xl border-2 border-camp-bark/25 bg-white/70 px-4 py-3
+           font-body text-camp-ink placeholder:text-camp-bark/40
+           focus:outline-none focus:border-camp-pine focus:ring-4 focus:ring-camp-sun/40
+           transition;
+  }
+  .field-label {
+    @apply block mb-1 font-body font-bold text-sm text-camp-pine-dark;
+  }
+
+  /* ── Badge cousu (statuts, compteurs) ─────────────────────── */
+  .badge-merit {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold
+           uppercase tracking-wide;
+  }
+}
+
+@layer utilities {
+  /* Lignes topographiques décoratives en arrière-plan */
+  .bg-topo {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'%3E%3Cg fill='none' stroke='%232f5d50' stroke-opacity='0.06' stroke-width='2'%3E%3Ccircle cx='300' cy='300' r='60'/%3E%3Ccircle cx='300' cy='300' r='120'/%3E%3Ccircle cx='300' cy='300' r='180'/%3E%3Ccircle cx='300' cy='300' r='240'/%3E%3Ccircle cx='300' cy='300' r='300'/%3E%3C/g%3E%3C/svg%3E");
+  }
+  .text-shadow-soft {
+    text-shadow: 0 2px 0 rgba(92, 67, 38, 0.15);
   }
 }

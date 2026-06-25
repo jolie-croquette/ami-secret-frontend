@@ -1,14 +1,17 @@
-import { createContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useState, useEffect, type ReactNode, type Dispatch, type SetStateAction } from 'react';
+import { authApi } from '@/api/auth';
+import { tokenStore } from '@/api/client';
+import type { AuthUser } from '@/api/types';
+import { CampLoader } from '@/components/CampLoader';
 
-const API_URL = import.meta.env.VITE_API_URL;
-
-export interface User {
+/**
+ * Utilisateur exposé par le contexte. `id` est conservé en alias de `_id`
+ * pour compatibilité avec les pages existantes.
+ */
+export interface User extends AuthUser {
   id: string;
-  name: string;
-  email: string;
   gameId?: string;
   isAdmin?: boolean;
-  onBoarded?: boolean; // ou isBoarded?: boolean
 }
 
 type AuthContextType = {
@@ -16,104 +19,55 @@ type AuthContextType = {
   signup: (name: string, email: string, password: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  refresh: () => Promise<void>;
+  setUser: Dispatch<SetStateAction<User | null>>;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUserState] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUser = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setUserState(null);
-      setLoading(false);
+  const refresh = async () => {
+    if (!tokenStore.get()) {
+      setUser(null);
       return;
     }
-
     try {
-      const res = await fetch(`${API_URL}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.ok) {
-        const json = await res.json();
-        // selon ton backend: json.data ou json.data.user
-        const u = json?.data?.user ?? json?.data ?? null;
-        setUserState(u);
-      } else {
-        setUserState(null);
-      }
-    } catch (err) {
-      console.error('Erreur lors de la récupération de l’utilisateur :', err);
-      setUserState(null);
-    } finally {
-      setLoading(false);
+      const data = await authApi.me();
+      setUser({ ...data, id: data._id });
+    } catch {
+      tokenStore.clear();
+      setUser(null);
     }
   };
 
   useEffect(() => {
-    fetchUser();
+    void (async () => {
+      await refresh();
+      setLoading(false);
+    })();
   }, []);
 
-  const handleAuth = async (res: Response) => {
-    const json = await res.json();
-    const token = json?.data?.token ?? json?.token;
-    if (!token) throw new Error("Token manquant dans la réponse.");
-    localStorage.setItem('token', token);
-
-    // si l’API renvoie déjà l’utilisateur, profite-en pour mettre à jour tout de suite
-    const u = json?.data?.user ?? json?.user ?? null;
-    if (u) {
-      setUserState(u);
-      setLoading(false);
-    } else {
-      await fetchUser();
-    }
-  };
-
   const signup = async (name: string, email: string, password: string) => {
-    const res = await fetch(`${API_URL}/auth/signup`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password }),
-    });
-
-    if (res.ok) return handleAuth(res);
-    if (res.status === 409) throw new Error("Ce courriel est déjà utilisé.");
-    throw new Error("Une erreur est survenue à l'inscription.");
+    await authApi.signup(name, email, password);
+    await refresh();
   };
 
   const login = async (email: string, password: string) => {
-    const res = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (res.ok) return handleAuth(res);
-    if (res.status === 401) throw new Error("Identifiants invalides.");
-    throw new Error("Une erreur est survenue à la connexion.");
+    await authApi.login(email, password);
+    await refresh();
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    setUserState(null);
+    authApi.logout();
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        signup,
-        login,
-        logout,
-        setUser: setUserState, // ✅ on expose le setter réel
-      }}
-    >
-      {!loading && children}
+    <AuthContext.Provider value={{ user, signup, login, logout, refresh, setUser }}>
+      {loading ? <CampLoader /> : children}
     </AuthContext.Provider>
   );
 };
