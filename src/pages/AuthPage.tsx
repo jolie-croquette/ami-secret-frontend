@@ -3,6 +3,7 @@ import { AuthContext } from '@/context/AuthContext';
 import { AnimatePresence, motion } from 'motion/react';
 import { toast, ToastContainer } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import { Mail, Lock, User, Loader2 } from 'lucide-react';
 import { ApiError } from '@/api/client';
 import { Pennants, MeritBadge, PineTree, CampScene } from '@/components/visuals/CampVisuals';
 import 'react-toastify/dist/ReactToastify.css';
@@ -15,9 +16,9 @@ export default function AuthPage() {
   const auth = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const toggleForm = () => {
-    if (isSubmitting) return;
-    setIsLogin((v) => !v);
+  const switchMode = (login: boolean) => {
+    if (isSubmitting || login === isLogin) return;
+    setIsLogin(login);
     setForm({ name: '', email: '', password: '' });
   };
 
@@ -37,11 +38,11 @@ export default function AuthPage() {
     try {
       if (!isLogin) {
         await auth.signup(name, email, password);
-        toast.success('Bienvenue au camp !');
+        toast.success('Compte créé.');
         navigate('/onboard', { replace: true });
       } else {
         await auth.login(email, password);
-        toast.success('Content de te revoir !');
+        toast.success('Connexion réussie.');
         navigate('/dashboard', { replace: true });
       }
     } catch (err) {
@@ -58,10 +59,8 @@ export default function AuthPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-camp-cream bg-topo flex items-center justify-center px-4 py-16">
-      {/* Fanions en haut */}
       <Pennants className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(680px,95vw)] h-12" />
 
-      {/* Sapins décoratifs */}
       <PineTree className="hidden md:block absolute bottom-24 left-10 w-20 opacity-80 animate-sway" />
       <PineTree className="hidden md:block absolute bottom-32 left-28 w-12 opacity-70 animate-sway" />
       <PineTree className="hidden md:block absolute bottom-24 right-10 w-24 opacity-80 animate-sway" />
@@ -73,94 +72,123 @@ export default function AuthPage() {
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="card-sign relative z-10 w-full max-w-md p-8 sm:p-10"
       >
-        <div className="flex flex-col items-center -mt-20 mb-2">
+        <div className="flex flex-col items-center -mt-20 mb-4">
           <MeritBadge
             label="AS"
             tone="#2f5d50"
             className="w-28 h-28 drop-shadow-md animate-stamp-in"
             title="Insigne Ami Secret"
           />
-          <p className="label-hand text-2xl mt-1 -rotate-2">
-            {isLogin ? 'ravis de te revoir' : 'rejoins le camp'}
-          </p>
+          <p className="label-hand text-2xl mt-1 -rotate-2">l’échange de cadeaux entre amis</p>
         </div>
 
-        <h1 className="font-display text-4xl font-black text-center text-camp-pine-dark text-shadow-soft mb-7">
-          {isLogin ? 'Connexion' : 'Créer un compte'}
-        </h1>
+        {/* Sélecteur connexion / inscription */}
+        <div className="relative grid grid-cols-2 gap-1 rounded-full bg-camp-sand/80 p-1 mb-7">
+          {[
+            { login: true, label: 'Connexion' },
+            { login: false, label: 'Inscription' },
+          ].map(({ login, label }) => {
+            const active = login === isLogin;
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => switchMode(login)}
+                className="relative z-10 rounded-full py-2 text-sm font-extrabold"
+                disabled={isSubmitting}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="auth-tab"
+                    className="absolute inset-0 -z-10 rounded-full bg-camp-pine shadow-sign-sm"
+                    transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                  />
+                )}
+                <span className={active ? 'text-camp-cream' : 'text-camp-pine'}>{label}</span>
+              </button>
+            );
+          })}
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-          <AnimatePresence mode="popLayout" initial={false}>
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <AnimatePresence initial={false}>
             {!isLogin && (
               <motion.div
                 key="name"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: 0.25, ease: 'easeInOut' }}
+                className="overflow-hidden"
               >
-                <label htmlFor="name" className="field-label">Nom de campeur</label>
-                <input
-                  id="name"
-                  type="text"
-                  autoComplete="name"
-                  className="field"
-                  placeholder="Ton prénom"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  disabled={isSubmitting}
-                />
+                <label htmlFor="name" className="field-label">Nom</label>
+                <div className="relative">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-camp-bark/45" />
+                  <input
+                    id="name"
+                    type="text"
+                    autoComplete="name"
+                    className="field pl-11"
+                    placeholder="Ton prénom"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    disabled={isSubmitting}
+                  />
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
 
           <div>
             <label htmlFor="email" className="field-label">Courriel</label>
-            <input
-              id="email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              className="field"
-              placeholder="campeur@exemple.com"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              disabled={isSubmitting}
-            />
+            <div className="relative">
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-camp-bark/45" />
+              <input
+                id="email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                className="field pl-11"
+                placeholder="exemple@courriel.com"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                disabled={isSubmitting}
+              />
+            </div>
           </div>
 
           <div>
             <label htmlFor="password" className="field-label">Mot de passe</label>
-            <input
-              id="password"
-              type="password"
-              autoComplete={isLogin ? 'current-password' : 'new-password'}
-              className="field"
-              placeholder="••••••••"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              disabled={isSubmitting}
-            />
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-camp-bark/45" />
+              <input
+                id="password"
+                type="password"
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
+                className="field pl-11"
+                placeholder="••••••••"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                disabled={isSubmitting}
+              />
+            </div>
           </div>
 
-          <button type="submit" className="btn-primary w-full text-lg" disabled={isSubmitting}>
-            {isSubmitting ? 'Un instant…' : isLogin ? 'Entrer dans le camp' : 'Planter ma tente'}
+          <button type="submit" className="btn-primary w-full text-lg !mt-6" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                {isLogin ? 'Connexion…' : 'Création…'}
+              </>
+            ) : isLogin ? (
+              'Se connecter'
+            ) : (
+              'Créer mon compte'
+            )}
           </button>
         </form>
-
-        <p className="mt-6 text-center text-sm text-camp-bark">
-          {isLogin ? 'Pas encore de carnet ?' : 'Déjà campeur ?'}{' '}
-          <button
-            onClick={toggleForm}
-            disabled={isSubmitting}
-            className="font-bold text-camp-ember-dark underline underline-offset-2 disabled:opacity-50"
-          >
-            {isLogin ? 'Créer un compte' : 'Se connecter'}
-          </button>
-        </p>
       </motion.div>
 
-      {/* Décor de bas de page : collines + sapins */}
       <CampScene className="absolute bottom-0 left-0 w-full h-32 pointer-events-none" />
 
       <ToastContainer position="top-center" autoClose={3500} theme="colored" />

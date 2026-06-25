@@ -80,7 +80,7 @@
            backdrop-blur-sm;
   }
   .card-stitch {
-    @apply relative rounded-3xl bg-camp-card border-2 border-dashed border-camp-bark/40 p-6;
+    @apply relative rounded-3xl bg-camp-cream border-2 border-dashed border-camp-bark/40 p-6;
   }
 
   /* ── Champ de formulaire ──────────────────────────────────── */
