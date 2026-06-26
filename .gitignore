@@ -136,3 +136,4 @@ id_rsa_BD
 
 /dist
 *.tsbuildinfo
+.env*

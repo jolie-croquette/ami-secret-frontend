@@ -2,10 +2,14 @@
 
 export type GameStatus = 'lobby' | 'drawn' | 'revealed';
 
+export type UserRole = 'user' | 'admin';
+
 export interface AuthUser {
   _id: string;
   name: string;
   email: string;
+  role?: UserRole;
+  isBanned?: boolean;
   likes: string[];
   dislikes: string[];
   favoriteColor?: string;
@@ -13,6 +17,45 @@ export interface AuthUser {
   allergies: string[];
   onBoarded: boolean;
   isOnboarded?: boolean;
+}
+
+/** Réponse paginée générique de l'API admin. */
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}
+
+export interface AdminStats {
+  users: { total: number; banned: number; admins: number; onboarded: number };
+  games: { total: number; lobby: number; drawn: number; revealed: number };
+}
+
+export interface AdminUserRow {
+  _id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  isBanned: boolean;
+  bannedAt?: string;
+  banReason?: string;
+  onBoarded: boolean;
+  createdAt?: string;
+}
+
+export interface AdminGameRow {
+  _id: string;
+  name: string;
+  code: string;
+  status: GameStatus;
+  numberOfWeeks: number;
+  startDate?: string;
+  createdAt?: string;
+  createdBy?: { _id: string; name: string; email?: string } | null;
+  memberCount: number;
+  adminCount: number;
 }
 
 export interface AdminUser {

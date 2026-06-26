@@ -2,7 +2,7 @@ import { useState, useContext } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 import { AnimatePresence, motion } from 'motion/react';
 import { toast, ToastContainer } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Loader2 } from 'lucide-react';
 import { ApiError } from '@/api/client';
 import { Pennants, MeritBadge, PineTree, CampScene } from '@/components/visuals/CampVisuals';
@@ -186,6 +186,17 @@ export default function AuthPage() {
               'Créer mon compte'
             )}
           </button>
+
+          {isLogin && (
+            <p className="text-center">
+              <Link
+                to="/forgot-password"
+                className="text-sm font-semibold text-camp-pine hover:underline"
+              >
+                Mot de passe oublié ?
+              </Link>
+            </p>
+          )}
         </form>
       </motion.div>
 

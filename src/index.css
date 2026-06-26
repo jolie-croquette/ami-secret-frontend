@@ -73,6 +73,10 @@
     @apply btn bg-transparent text-camp-pine border-2 border-camp-pine/30
            hover:bg-camp-pine/10;
   }
+  .btn-danger {
+    @apply btn bg-camp-berry text-white shadow-sign
+           hover:bg-camp-berry/90 hover:-translate-y-0.5 active:translate-y-0 active:shadow-sign-sm;
+  }
 
   /* ── Carte « pancarte de bois » avec couture en pointillé ─── */
   .card-sign {
@@ -98,6 +102,17 @@
   .badge-merit {
     @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold
            uppercase tracking-wide;
+  }
+
+  /* ── Bouton d'action rond (icône) ─────────────────────────── */
+  .icon-btn {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-camp-bark/15
+           bg-white/60 text-camp-pine transition hover:border-camp-pine/40 hover:bg-camp-sand/50
+           focus:outline-none focus-visible:ring-4 focus-visible:ring-camp-sun/50
+           disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .icon-btn-danger {
+    @apply text-camp-berry hover:border-camp-berry/40 hover:bg-camp-berry/10;
   }
 }
 

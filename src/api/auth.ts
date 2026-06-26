@@ -15,4 +15,12 @@ export const authApi = {
   me: () => api.get<AuthUser>('/auth/me'),
 
   logout: () => tokenStore.clear(),
+
+  /** Déclenche l'envoi d'un lien de réinitialisation (réponse constante). */
+  forgotPassword: (email: string) =>
+    api.post<{ ok: boolean }>('/auth/forgot-password', { email }),
+
+  /** Définit un nouveau mot de passe à partir d'un jeton de réinitialisation. */
+  resetPassword: (token: string, password: string) =>
+    api.post<{ ok: boolean }>('/auth/reset-password', { token, password }),
 };

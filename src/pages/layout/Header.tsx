@@ -2,7 +2,7 @@ import { useContext, useRef, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
-import { TreePine, UserRound, LayoutGrid, LogIn, Plus, LogOut, ChevronDown } from 'lucide-react';
+import { TreePine, UserRound, LayoutGrid, LogIn, Plus, LogOut, ChevronDown, ShieldCheck } from 'lucide-react';
 
 function capitalizeWords(s?: string) {
   if (!s) return '';
@@ -53,6 +53,7 @@ export default function Header() {
     { to: '/dashboard', icon: LayoutGrid, label: 'Mes parties' },
     { to: '/game/join', icon: LogIn, label: 'Rejoindre une partie' },
     { to: '/game/create', icon: Plus, label: 'Créer une partie' },
+    ...(auth?.isAdmin ? [{ to: '/admin', icon: ShieldCheck, label: 'Espace admin' }] : []),
   ];
 
   return (

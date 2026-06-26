@@ -16,6 +16,7 @@ export interface User extends AuthUser {
 
 type AuthContextType = {
   user: User | null;
+  isAdmin: boolean;
   signup: (name: string, email: string, password: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -66,7 +67,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, signup, login, logout, refresh, setUser }}>
+    <AuthContext.Provider
+      value={{ user, isAdmin: user?.role === 'admin', signup, login, logout, refresh, setUser }}
+    >
       {loading ? <CampLoader /> : children}
     </AuthContext.Provider>
   );

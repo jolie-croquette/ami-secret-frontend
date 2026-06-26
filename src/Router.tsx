@@ -5,6 +5,7 @@ import { Suspense, type ReactNode, type ReactElement } from 'react';
 import Layout from '@/pages/layout/Layout';
 import RequireAuth from '@/components/RequireAuth';
 import RequireNoAuth from '@/components/RequireNoAuth';
+import RequireAdmin from '@/components/RequireAdmin';
 import { CampLoader } from '@/components/CampLoader';
 import PlayerLobby from './pages/PlayerLobby';
 import PlayerProfilePage from './pages/Profile';
@@ -16,6 +17,12 @@ const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const CreateGame = lazy(() => import('@/pages/createGame'));
 const LobbyAdminPage = lazy(() => import('@/pages/LobbyAdminPage'));
 const JoinGamePage = lazy(() => import('@/pages/JoinGame'));
+const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
+const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'));
+const AdminOverview = lazy(() => import('@/pages/admin/AdminOverview'));
+const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'));
+const AdminGames = lazy(() => import('@/pages/admin/AdminGames'));
 
 const NotFound = () => (
   <div className="min-h-screen flex items-center justify-center bg-camp-cream bg-topo text-center p-8">
@@ -121,6 +128,27 @@ export const router = createBrowserRouter([
             <PlayerLobby />
           </RequireAuth>
         ),
+      },
+
+      // mot de passe (public)
+      { path: '/forgot-password', element: withSuspense(<ForgotPassword />) },
+      { path: '/reset-password', element: withSuspense(<ResetPassword />) },
+
+      // espace administrateur
+      {
+        path: '/admin',
+        element: withSuspense(
+          <RequireAuth>
+            <RequireAdmin>
+              <AdminLayout />
+            </RequireAdmin>
+          </RequireAuth>
+        ),
+        children: [
+          { index: true, element: withSuspense(<AdminOverview />) },
+          { path: 'users', element: withSuspense(<AdminUsers />) },
+          { path: 'games', element: withSuspense(<AdminGames />) },
+        ],
       },
 
       // redirects utiles
