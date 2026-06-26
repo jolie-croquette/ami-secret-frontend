@@ -59,7 +59,7 @@ export interface AdminGameDetail {
   members?: {
     user: { _id: string; name: string; email?: string };
     weeksReceived: number[];
-    secretFriend?: string | null;
+    secretFriend?: { _id: string; name: string; email?: string } | null;
     joinedAt?: string;
   }[];
 }

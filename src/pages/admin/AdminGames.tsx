@@ -16,6 +16,8 @@ import {
   Pencil,
   UserMinus,
   Loader2,
+  Gift,
+  ArrowRight,
 } from 'lucide-react';
 
 type StatusFilter = NonNullable<ListGamesParams['status']>;
@@ -357,17 +359,35 @@ export default function AdminGames() {
         {detailLoading ? (
           <p className="text-sm text-camp-bark">Chargement…</p>
         ) : detail ? (
-          <div className="max-h-72 space-y-2 overflow-auto">
+          <div className="max-h-80 space-y-2 overflow-auto">
             <p className="text-sm text-camp-bark">
               Code <span className="font-mono font-bold">{detail.code}</span> · {detail.numberOfWeeks}{' '}
               semaines · statut {STATUS_LABEL[detail.status]}
             </p>
+            {detail.status === 'lobby' ? (
+              <p className="rounded-xl bg-camp-sand/40 px-3 py-2 text-xs text-camp-bark">
+                Le tirage n’a pas encore été effectué — aucune attribution à afficher.
+              </p>
+            ) : (
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-camp-bark">
+                <Gift className="h-3.5 w-3.5 text-camp-pine" /> Résultat du tirage : qui offre à qui
+              </p>
+            )}
             <ul className="divide-y divide-camp-bark/10">
               {(detail.members ?? []).map((m) => (
                 <li key={m.user._id} className="flex items-center justify-between gap-2 py-2 text-sm">
-                  <span className="min-w-0 flex-1 truncate font-semibold text-camp-pine-dark">
-                    {m.user.name}
-                  </span>
+                  <div className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold text-camp-pine-dark">
+                      {m.user.name}
+                    </span>
+                    {m.secretFriend && (
+                      <span className="flex items-center gap-1 truncate text-xs text-camp-bark">
+                        <ArrowRight className="h-3 w-3 shrink-0 text-camp-pine" />
+                        offre à{' '}
+                        <span className="font-semibold text-camp-pine">{m.secretFriend.name}</span>
+                      </span>
+                    )}
+                  </div>
                   <span className="shrink-0 text-camp-bark">{m.weeksReceived?.length ?? 0} reçus</span>
                   <button
                     className="icon-btn icon-btn-danger !h-8 !w-8 shrink-0"
