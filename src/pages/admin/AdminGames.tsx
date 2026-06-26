@@ -347,7 +347,7 @@ export default function AdminGames() {
               {(detail.members ?? []).map((m) => (
                 <li key={m.user._id} className="flex items-center justify-between py-2 text-sm">
                   <span className="font-semibold text-camp-pine-dark">{m.user.name}</span>
-                  <span className="text-camp-bark">{m.weeksGifted?.length ?? 0} cadeaux</span>
+                  <span className="text-camp-bark">{m.weeksReceived?.length ?? 0} reçus</span>
                 </li>
               ))}
               {(detail.members ?? []).length === 0 && (

@@ -94,7 +94,7 @@ export interface GameDetails {
   adminIds: string[];
   isAdmin: boolean;
   isMember: boolean;
-  myWeeksGifted: number[];
+  myWeeksReceived: number[];
   players: GamePlayer[];
 }
 
@@ -117,8 +117,8 @@ export interface InboxMessage {
 
 export interface ProgressMember {
   user: { _id: string; name: string };
-  weeksGifted: number[];
-  giftedCount: number;
+  weeksReceived: number[];
+  receivedCount: number;
 }
 
 export interface GameProgress {

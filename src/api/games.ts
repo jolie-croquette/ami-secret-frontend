@@ -50,10 +50,10 @@ export const gamesApi = {
 
   myTarget: (code: string) => api.get<TargetPreferences>(`/game/${code}/my-target`),
 
-  markWeek: (code: string, week: number, gifted: boolean) =>
-    api.patch<{ week: number; gifted: boolean; weeksGifted: number[] }>(
+  markWeek: (code: string, week: number, received: boolean) =>
+    api.patch<{ week: number; received: boolean; weeksReceived: number[] }>(
       `/game/${code}/weeks/${week}`,
-      { gifted }
+      { received }
     ),
 
   progress: (code: string) => api.get<GameProgress>(`/game/${code}/progress`),

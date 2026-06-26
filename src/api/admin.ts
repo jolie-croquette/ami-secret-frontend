@@ -58,7 +58,7 @@ export interface AdminGameDetail {
   admin?: { _id: string; name: string; email?: string }[];
   members?: {
     user: { _id: string; name: string; email?: string };
-    weeksGifted: number[];
+    weeksReceived: number[];
     secretFriend?: string | null;
     joinedAt?: string;
   }[];

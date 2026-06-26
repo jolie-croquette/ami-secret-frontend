@@ -33,6 +33,7 @@ import type {
   GameProgress,
 } from '@/api/types';
 import { MeritBadge, Tent, Campfire, CampScene } from '@/components/visuals/CampVisuals';
+import ProgressViz from '@/components/lobby/ProgressViz';
 import 'react-toastify/dist/ReactToastify.css';
 
 const STATUS_META: Record<GameStatus, { label: string; classes: string }> = {
@@ -66,7 +67,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
   const [error, setError] = useState<string | null>(null);
 
   const [target, setTarget] = useState<TargetPreferences | null>(null);
-  const [weeksGifted, setWeeksGifted] = useState<number[]>([]);
+  const [weeksReceived, setWeeksReceived] = useState<number[]>([]);
   const [busyWeek, setBusyWeek] = useState<number | null>(null);
 
   const [messages, setMessages] = useState<InboxMessage[]>([]);
@@ -89,7 +90,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
       setError(null);
       const g = await gamesApi.byCode(code);
       setGame(g);
-      setWeeksGifted(g.myWeeksGifted ?? []);
+      setWeeksReceived(g.myWeeksReceived ?? []);
 
       if (!g.isAdmin && !g.isMember) {
         navigate(`/game/join?code=${code}`, { replace: true });
@@ -229,11 +230,11 @@ export default function GameLobby({ admin }: { admin: boolean }) {
   };
 
   const toggleWeek = async (week: number) => {
-    const gifted = !weeksGifted.includes(week);
+    const received = !weeksReceived.includes(week);
     setBusyWeek(week);
     try {
-      const res = await gamesApi.markWeek(code, week, gifted);
-      setWeeksGifted(res.weeksGifted);
+      const res = await gamesApi.markWeek(code, week, received);
+      setWeeksReceived(res.weeksReceived);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erreur.');
     } finally {
@@ -462,13 +463,13 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                   </div>
                 )}
 
-                {/* Suivi des semaines */}
+                {/* Suivi des cadeaux reçus */}
                 {game.isMember && (
                   <div className="card-sign p-6">
-                    <h2 className="mb-3 font-display text-xl font-bold text-camp-pine-dark">Suivi des cadeaux</h2>
+                    <h2 className="mb-3 font-display text-xl font-bold text-camp-pine-dark">Cadeaux reçus</h2>
                     <div className="flex flex-wrap gap-2">
                       {Array.from({ length: game.numberOfWeeks }, (_, i) => i + 1).map((week) => {
-                        const done = weeksGifted.includes(week);
+                        const done = weeksReceived.includes(week);
                         return (
                           <button
                             key={week}
@@ -493,7 +494,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                       })}
                     </div>
                     <p className="mt-3 text-xs text-camp-bark">
-                      Coche chaque semaine où tu as offert ton cadeau.
+                      Coche chaque semaine où tu as bien reçu ton cadeau.
                     </p>
                   </div>
                 )}
@@ -548,15 +549,8 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                     )}
                     {progress && (
                       <div className="space-y-2">
-                        <p className="field-label">Progression</p>
-                        {progress.members.map((m) => (
-                          <div key={m.user._id} className="flex items-center justify-between rounded-xl bg-camp-sand/30 px-3 py-2">
-                            <span className="text-sm font-semibold text-camp-ink">{m.user.name}</span>
-                            <span className="text-sm text-camp-bark">
-                              {m.giftedCount}/{progress.numberOfWeeks} semaines
-                            </span>
-                          </div>
-                        ))}
+                        <p className="field-label">Progression des cadeaux reçus</p>
+                        <ProgressViz progress={progress} />
                       </div>
                     )}
                   </div>
