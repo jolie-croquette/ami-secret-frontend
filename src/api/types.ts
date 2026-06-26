@@ -43,6 +43,7 @@ export interface AdminUserRow {
   banReason?: string;
   onBoarded: boolean;
   createdAt?: string;
+  lastLogin?: string;
 }
 
 export interface AdminGameRow {
@@ -51,6 +52,7 @@ export interface AdminGameRow {
   code: string;
   status: GameStatus;
   numberOfWeeks: number;
+  reminderDayBefore?: number;
   startDate?: string;
   createdAt?: string;
   createdBy?: { _id: string; name: string; email?: string } | null;

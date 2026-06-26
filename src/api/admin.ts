@@ -75,6 +75,8 @@ export const adminApi = {
   unbanUser: (id: string) => api.patch<AdminUserRow>(`/admin/users/${id}/unban`),
   setRole: (id: string, role: UserRole) =>
     api.patch<AdminUserRow>(`/admin/users/${id}/role`, { role }),
+  updateUser: (id: string, body: { name?: string; email?: string }) =>
+    api.patch<AdminUserRow>(`/admin/users/${id}`, body),
   deleteUser: (id: string) => api.del<{ ok: boolean }>(`/admin/users/${id}`),
   resetPassword: (id: string) =>
     api.post<{ link: string; emailSent: boolean }>(`/admin/users/${id}/reset-password`),
@@ -82,6 +84,10 @@ export const adminApi = {
   listGames: (p: ListGamesParams = {}) =>
     api.get<Paginated<AdminGameRow>>(`/admin/games${qs(p as Record<string, string | number | undefined>)}`),
   getGame: (id: string) => api.get<AdminGameDetail>(`/admin/games/${id}`),
+  updateGame: (
+    id: string,
+    body: { name?: string; numberOfWeeks?: number; reminderDayBefore?: number }
+  ) => api.patch<AdminGameRow>(`/admin/games/${id}`, body),
   deleteGame: (id: string) => api.del<{ ok: boolean }>(`/admin/games/${id}`),
   forceDraw: (id: string) => api.post<{ status: string }>(`/admin/games/${id}/force-draw`),
   forceReveal: (id: string) => api.post<{ status: string }>(`/admin/games/${id}/force-reveal`),

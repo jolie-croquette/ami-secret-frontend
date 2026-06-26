@@ -13,6 +13,7 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
+  Pencil,
 } from 'lucide-react';
 
 type StatusFilter = NonNullable<ListGamesParams['status']>;
@@ -49,6 +50,12 @@ export default function AdminGames() {
   const [confirm, setConfirm] = useState<{ kind: ConfirmKind; game: AdminGameRow } | null>(null);
   const [detail, setDetail] = useState<AdminGameDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  const [edit, setEdit] = useState<AdminGameRow | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editWeeks, setEditWeeks] = useState(7);
+  const [editReminder, setEditReminder] = useState(0);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const load = useCallback(
     async (opts?: { page?: number; search?: string; status?: StatusFilter }) => {
@@ -94,6 +101,37 @@ export default function AdminGames() {
       setDetail(null);
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  const openEdit = (g: AdminGameRow) => {
+    setEditName(g.name);
+    setEditWeeks(g.numberOfWeeks);
+    setEditReminder(g.reminderDayBefore ?? 0);
+    setEdit(g);
+  };
+
+  const saveEdit = async () => {
+    if (!edit) return;
+    const name = editName.trim();
+    if (!name) {
+      toast.warning('Le nom est requis.');
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      await adminApi.updateGame(edit._id, {
+        name,
+        numberOfWeeks: editWeeks,
+        reminderDayBefore: editReminder,
+      });
+      toast.success('Partie mise à jour.');
+      setEdit(null);
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Mise à jour impossible.');
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -196,6 +234,14 @@ export default function AdminGames() {
                     onClick={() => void openDetail(g)}
                   >
                     <Eye className="h-4 w-4" />
+                  </button>
+                  <button
+                    className="icon-btn"
+                    title="Modifier la partie"
+                    disabled={busy}
+                    onClick={() => openEdit(g)}
+                  >
+                    <Pencil className="h-4 w-4" />
                   </button>
                   {g.status === 'lobby' && (
                     <button
@@ -310,6 +356,50 @@ export default function AdminGames() {
             </ul>
           </div>
         ) : null}
+      </ConfirmModal>
+
+      {/* Édition d'une partie */}
+      <ConfirmModal
+        open={!!edit}
+        title={edit ? `Modifier « ${edit.name} »` : 'Modifier'}
+        confirmLabel="Enregistrer"
+        loading={savingEdit}
+        onCancel={() => setEdit(null)}
+        onConfirm={() => void saveEdit()}
+      >
+        <div className="space-y-3">
+          <div>
+            <label className="field-label">Nom de la partie</label>
+            <input
+              className="field"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="Nom"
+            />
+          </div>
+          <div>
+            <label className="field-label">Nombre de semaines</label>
+            <input
+              className="field"
+              type="number"
+              min={1}
+              max={52}
+              value={editWeeks}
+              onChange={(e) => setEditWeeks(Number(e.target.value))}
+            />
+          </div>
+          <div>
+            <label className="field-label">Jour de rappel (0–6 jours avant)</label>
+            <input
+              className="field"
+              type="number"
+              min={0}
+              max={6}
+              value={editReminder}
+              onChange={(e) => setEditReminder(Number(e.target.value))}
+            />
+          </div>
+        </div>
       </ConfirmModal>
     </div>
   );

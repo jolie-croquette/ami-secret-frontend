@@ -3,7 +3,7 @@ import { AuthContext } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { toast, ToastContainer } from 'react-toastify';
-import { Plus, LogIn, Loader2, Info, LogOut, KeyRound, CalendarDays } from 'lucide-react';
+import { Plus, LogIn, Loader2, LogOut, KeyRound, CalendarDays } from 'lucide-react';
 import { gamesApi } from '@/api/games';
 import { ApiError } from '@/api/client';
 import type { GameSummary, GameStatus } from '@/api/types';
@@ -61,22 +61,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-camp-cream bg-topo px-5 py-10 text-camp-ink">
-      <div className="mx-auto max-w-5xl">
-        {user && !user.onBoarded && (
-          <div className="card-stitch mb-6 flex items-center gap-3 !py-4">
-            <Info className="h-5 w-5 shrink-0 text-camp-ember-dark" />
-            <p className="text-sm">
-              Complète ton profil pour que tes amis sachent quoi t’offrir.{' '}
-              <button
-                onClick={() => navigate('/onboard')}
-                className="font-bold text-camp-ember-dark underline underline-offset-2"
-              >
-                Compléter mon profil
-              </button>
-            </p>
-          </div>
-        )}
-
+      <div className="mx-auto max-w-6xl">
         <h1 className="mb-1 text-center font-display text-4xl font-black text-camp-pine-dark">
           Bonjour, {user?.name}
         </h1>

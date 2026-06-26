@@ -275,13 +275,6 @@ export default function PreferencesPage() {
           <span>
             Étape {step + 1} sur {TOTAL_STEPS}
           </span>
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard')}
-            className="font-semibold text-camp-pine hover:underline"
-          >
-            Plus tard
-          </button>
         </div>
         <div className="mb-8 h-2 w-full overflow-hidden rounded-full bg-camp-sand/70">
           <motion.div

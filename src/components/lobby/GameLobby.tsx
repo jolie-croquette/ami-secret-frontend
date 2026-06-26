@@ -16,6 +16,11 @@ import {
   ShieldCheck,
   LogOut,
   Inbox,
+  Save,
+  UserMinus,
+  ShieldPlus,
+  ShieldMinus,
+  Settings,
 } from 'lucide-react';
 import { gamesApi } from '@/api/games';
 import { messagesApi } from '@/api/messages';
@@ -71,6 +76,13 @@ export default function GameLobby({ admin }: { admin: boolean }) {
   const [progress, setProgress] = useState<GameProgress | null>(null);
   const [acting, setActing] = useState(false);
 
+  // Gestion organisateur : édition des détails + gestion des joueurs.
+  const [editName, setEditName] = useState('');
+  const [editWeeks, setEditWeeks] = useState(7);
+  const [editReminder, setEditReminder] = useState(0);
+  const [savingDetails, setSavingDetails] = useState(false);
+  const [busyPlayer, setBusyPlayer] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     try {
       setLoading(true);
@@ -110,6 +122,70 @@ export default function GameLobby({ admin }: { admin: boolean }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Synchronise le formulaire d'édition avec la partie chargée.
+  useEffect(() => {
+    if (!game) return;
+    setEditName(game.name);
+    setEditWeeks(game.numberOfWeeks);
+    setEditReminder(game.reminderDayBefore ?? 0);
+  }, [game]);
+
+  const saveDetails = async () => {
+    if (!game) return;
+    const name = editName.trim();
+    if (!name) return toast.warning('Le nom de la partie est requis.');
+    setSavingDetails(true);
+    try {
+      const lobby = game.status === 'lobby';
+      await gamesApi.updateGame(game._id, {
+        name,
+        // semaines & rappel verrouillés après le tirage
+        numberOfWeeks: lobby ? editWeeks : undefined,
+        reminderDayBefore: lobby ? editReminder : undefined,
+      });
+      toast.success('Partie mise à jour.');
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Mise à jour impossible.');
+    } finally {
+      setSavingDetails(false);
+    }
+  };
+
+  const removePlayer = async (userId: string, name: string) => {
+    if (!game) return;
+    if (!window.confirm(`Retirer ${name} de la partie ?`)) return;
+    setBusyPlayer(userId);
+    try {
+      await gamesApi.removePlayer(game._id, userId);
+      toast.success(`${name} a été retiré.`);
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Action impossible.');
+    } finally {
+      setBusyPlayer(null);
+    }
+  };
+
+  const toggleOrganizer = async (userId: string, name: string, isOrga: boolean) => {
+    if (!game) return;
+    setBusyPlayer(userId);
+    try {
+      if (isOrga) {
+        await gamesApi.removeAdmin(game._id, userId);
+        toast.success(`${name} n'est plus organisateur.`);
+      } else {
+        await gamesApi.addAdmin(game._id, userId);
+        toast.success(`${name} est maintenant organisateur.`);
+      }
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Action impossible.');
+    } finally {
+      setBusyPlayer(null);
+    }
+  };
 
   const copy = async (text: string, label: string) => {
     try {
@@ -223,7 +299,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
 
   return (
     <div className="relative min-h-screen bg-camp-cream bg-topo px-4 py-8 pb-40">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-6xl">
         {/* En-tête */}
         <div className="card-sign mb-6 p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -271,6 +347,61 @@ export default function GameLobby({ admin }: { admin: boolean }) {
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Colonne principale */}
           <div className="space-y-6 lg:col-span-2">
+            {/* Gestion des détails (organisateur) */}
+            {admin && game.isAdmin && (
+              <div className="card-sign p-6">
+                <h2 className="mb-4 flex items-center gap-2 font-display text-xl font-bold text-camp-pine-dark">
+                  <Settings className="h-5 w-5 text-camp-pine" /> Détails de la partie
+                </h2>
+                <div className="space-y-3">
+                  <div>
+                    <label className="field-label">Nom de la partie</label>
+                    <input
+                      className="field"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="Nom"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="field-label">Nombre de semaines</label>
+                      <input
+                        className="field"
+                        type="number"
+                        min={1}
+                        max={52}
+                        value={editWeeks}
+                        disabled={drawn}
+                        onChange={(e) => setEditWeeks(Number(e.target.value))}
+                      />
+                    </div>
+                    <div>
+                      <label className="field-label">Jour de rappel (0–6 j. avant)</label>
+                      <input
+                        className="field"
+                        type="number"
+                        min={0}
+                        max={6}
+                        value={editReminder}
+                        disabled={drawn}
+                        onChange={(e) => setEditReminder(Number(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                  {drawn && (
+                    <p className="text-xs text-camp-bark/70">
+                      Le nombre de semaines et le rappel sont verrouillés après le tirage.
+                    </p>
+                  )}
+                  <button onClick={() => void saveDetails()} disabled={savingDetails} className="btn-primary">
+                    {savingDetails ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+                    Enregistrer
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Tirage / lobby */}
             {!drawn ? (
               <div className="card-sign flex flex-col items-center gap-3 p-8 text-center">
@@ -444,8 +575,10 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                 {game.players.map((p) => {
                   const isP_admin = game.adminIds.includes(p._id);
                   const isMe = me?.id === p._id;
+                  const canManage = admin && game.isAdmin && !isMe;
+                  const playerBusy = busyPlayer === p._id;
                   return (
-                    <li key={p._id} className="flex items-center gap-3 rounded-2xl border-2 border-camp-bark/15 bg-white/50 p-3">
+                    <li key={p._id} className="flex items-center gap-2 rounded-2xl border-2 border-camp-bark/15 bg-white/50 p-3">
                       <span className="flex h-9 w-9 items-center justify-center rounded-full bg-camp-moss text-sm font-extrabold text-white">
                         {initials(p.name)}
                       </span>
@@ -456,6 +589,35 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                         </span>
                       )}
                       {isMe && <span className="badge-merit bg-camp-pine/15 text-camp-pine-dark">Moi</span>}
+
+                      {canManage && (
+                        <span className="flex items-center gap-1">
+                          <button
+                            className="icon-btn !h-8 !w-8"
+                            title={isP_admin ? 'Retirer le rôle organisateur' : 'Nommer organisateur'}
+                            disabled={playerBusy}
+                            onClick={() => void toggleOrganizer(p._id, p.name, isP_admin)}
+                          >
+                            {playerBusy ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : isP_admin ? (
+                              <ShieldMinus className="h-4 w-4" />
+                            ) : (
+                              <ShieldPlus className="h-4 w-4" />
+                            )}
+                          </button>
+                          {!isP_admin && !drawn && (
+                            <button
+                              className="icon-btn icon-btn-danger !h-8 !w-8"
+                              title="Retirer de la partie"
+                              disabled={playerBusy}
+                              onClick={() => void removePlayer(p._id, p.name)}
+                            >
+                              <UserMinus className="h-4 w-4" />
+                            </button>
+                          )}
+                        </span>
+                      )}
                     </li>
                   );
                 })}

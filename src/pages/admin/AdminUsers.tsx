@@ -18,7 +18,16 @@ import {
   Copy,
   Crown,
   CircleCheck,
+  Pencil,
 } from 'lucide-react';
+
+const fmtDate = (iso?: string): string =>
+  iso
+    ? new Date(iso).toLocaleString('fr-CA', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      })
+    : 'jamais';
 
 type StatusFilter = NonNullable<ListUsersParams['status']>;
 type ConfirmKind = 'ban' | 'delete' | 'demote';
@@ -53,6 +62,11 @@ export default function AdminUsers() {
   const [confirm, setConfirm] = useState<{ kind: ConfirmKind; user: AdminUserRow } | null>(null);
   const [banReason, setBanReason] = useState('');
   const [resetInfo, setResetInfo] = useState<{ link: string; emailSent: boolean } | null>(null);
+
+  const [edit, setEdit] = useState<AdminUserRow | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const load = useCallback(
     async (opts?: { page?: number; search?: string; status?: StatusFilter }) => {
@@ -157,6 +171,36 @@ export default function AdminUsers() {
     }
   };
 
+  const openEdit = (u: AdminUserRow) => {
+    setEditName(u.name);
+    setEditEmail(u.email);
+    setEdit(u);
+  };
+
+  const saveEdit = async () => {
+    if (!edit) return;
+    const name = editName.trim();
+    const email = editEmail.trim();
+    if (!name) {
+      toast.warning('Le nom est requis.');
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      await adminApi.updateUser(edit._id, {
+        name: name !== edit.name ? name : undefined,
+        email: email !== edit.email ? email : undefined,
+      });
+      toast.success('Utilisateur mis à jour.');
+      setEdit(null);
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Mise à jour impossible.');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   const copyLink = async () => {
     if (!resetInfo) return;
     try {
@@ -218,12 +262,25 @@ export default function AdminUsers() {
                     )}
                   </div>
                   <p className="truncate text-sm text-camp-bark">{u.email}</p>
+                  <p className="mt-0.5 text-xs text-camp-bark/70">
+                    Dernière connexion : {fmtDate(u.lastLogin)}
+                  </p>
                   {u.isBanned && u.banReason && (
                     <p className="mt-0.5 text-xs text-camp-berry">Motif : {u.banReason}</p>
                   )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5">
+                  {/* Édition */}
+                  <button
+                    className="icon-btn"
+                    title="Modifier (nom, courriel)"
+                    disabled={busy}
+                    onClick={() => openEdit(u)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+
                   {/* Rôle */}
                   {!isAdmin && (
                     <button
@@ -387,6 +444,38 @@ export default function AdminUsers() {
             </button>
           </div>
         )}
+      </ConfirmModal>
+
+      {/* Édition d'un utilisateur */}
+      <ConfirmModal
+        open={!!edit}
+        title={edit ? `Modifier ${edit.name}` : 'Modifier'}
+        confirmLabel="Enregistrer"
+        loading={savingEdit}
+        onCancel={() => setEdit(null)}
+        onConfirm={() => void saveEdit()}
+      >
+        <div className="space-y-3">
+          <div>
+            <label className="field-label">Nom</label>
+            <input
+              className="field"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="Nom"
+            />
+          </div>
+          <div>
+            <label className="field-label">Courriel</label>
+            <input
+              className="field"
+              type="email"
+              value={editEmail}
+              onChange={(e) => setEditEmail(e.target.value)}
+              placeholder="exemple@courriel.com"
+            />
+          </div>
+        </div>
       </ConfirmModal>
     </div>
   );
