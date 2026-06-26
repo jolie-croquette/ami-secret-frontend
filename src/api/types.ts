@@ -112,7 +112,8 @@ export interface InboxMessage {
   _id: string;
   body: string;
   createdAt: string;
-  readAt?: string;
+  /** true = message envoyé par moi (« Moi »), false = reçu (« Ami secret »). */
+  mine: boolean;
 }
 
 export interface ProgressMember {

@@ -250,6 +250,8 @@ export default function GameLobby({ admin }: { admin: boolean }) {
     try {
       await messagesApi.send(code, body);
       setDraft('');
+      const updated = await messagesApi.inbox(code).catch(() => null);
+      if (updated) setMessages(updated);
       toast.success('Message envoyé.');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Envoi impossible.');
@@ -505,7 +507,43 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                     <h2 className="mb-3 flex items-center gap-2 font-display text-xl font-bold text-camp-pine-dark">
                       <Inbox className="h-5 w-5 text-camp-lake" /> Messages anonymes
                     </h2>
-                    <form onSubmit={sendMessage} className="mb-4 flex gap-2">
+
+                    <div className="mb-4 space-y-3">
+                      {messages.length === 0 ? (
+                        <p className="text-sm text-camp-bark/70">
+                          Aucun message pour l’instant. Envoie un indice à ton ami secret&nbsp;!
+                        </p>
+                      ) : (
+                        messages.map((m) => (
+                          <div
+                            key={m._id}
+                            className={`flex flex-col ${m.mine ? 'items-end' : 'items-start'}`}
+                          >
+                            <span className="mb-1 px-1 text-xs font-bold text-camp-bark/70">
+                              {m.mine ? 'Moi' : 'Ami secret'}
+                            </span>
+                            <div
+                              className={`max-w-[85%] rounded-2xl border-2 p-3 ${
+                                m.mine
+                                  ? 'border-camp-pine bg-camp-pine text-camp-cream'
+                                  : 'border-camp-bark/15 bg-white/70 text-camp-ink'
+                              }`}
+                            >
+                              <p className="text-sm">{m.body}</p>
+                              <p
+                                className={`mt-1 text-xs ${
+                                  m.mine ? 'text-camp-cream/70' : 'text-camp-bark/60'
+                                }`}
+                              >
+                                {new Date(m.createdAt).toLocaleDateString('fr-CA')}
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <form onSubmit={sendMessage} className="flex gap-2">
                       <input
                         value={draft}
                         onChange={(e) => setDraft(e.target.value)}
@@ -517,21 +555,6 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                         {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                       </button>
                     </form>
-                    <div className="space-y-2">
-                      <p className="field-label">Reçus (anonymes)</p>
-                      {messages.length === 0 ? (
-                        <p className="text-sm text-camp-bark/70">Aucun message reçu.</p>
-                      ) : (
-                        messages.map((m) => (
-                          <div key={m._id} className="rounded-2xl border-2 border-camp-bark/15 bg-white/60 p-3">
-                            <p className="text-sm text-camp-ink">{m.body}</p>
-                            <p className="mt-1 text-xs text-camp-bark/60">
-                              {new Date(m.createdAt).toLocaleDateString('fr-CA')}
-                            </p>
-                          </div>
-                        ))
-                      )}
-                    </div>
                   </div>
                 )}
 
