@@ -14,6 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Pencil,
+  UserMinus,
+  Loader2,
 } from 'lucide-react';
 
 type StatusFilter = NonNullable<ListGamesParams['status']>;
@@ -50,6 +52,7 @@ export default function AdminGames() {
   const [confirm, setConfirm] = useState<{ kind: ConfirmKind; game: AdminGameRow } | null>(null);
   const [detail, setDetail] = useState<AdminGameDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   const [edit, setEdit] = useState<AdminGameRow | null>(null);
   const [editName, setEditName] = useState('');
@@ -101,6 +104,22 @@ export default function AdminGames() {
       setDetail(null);
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  const removeMember = async (userId: string, name: string) => {
+    if (!detail) return;
+    if (!window.confirm(`Retirer ${name} de « ${detail.name} » ?`)) return;
+    setRemovingId(userId);
+    try {
+      await adminApi.removeGameMember(detail._id, userId);
+      toast.success(`${name} a été retiré de la partie.`);
+      setDetail(await adminApi.getGame(detail._id));
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Retrait impossible.');
+    } finally {
+      setRemovingId(null);
     }
   };
 
@@ -345,9 +364,23 @@ export default function AdminGames() {
             </p>
             <ul className="divide-y divide-camp-bark/10">
               {(detail.members ?? []).map((m) => (
-                <li key={m.user._id} className="flex items-center justify-between py-2 text-sm">
-                  <span className="font-semibold text-camp-pine-dark">{m.user.name}</span>
-                  <span className="text-camp-bark">{m.weeksReceived?.length ?? 0} reçus</span>
+                <li key={m.user._id} className="flex items-center justify-between gap-2 py-2 text-sm">
+                  <span className="min-w-0 flex-1 truncate font-semibold text-camp-pine-dark">
+                    {m.user.name}
+                  </span>
+                  <span className="shrink-0 text-camp-bark">{m.weeksReceived?.length ?? 0} reçus</span>
+                  <button
+                    className="icon-btn icon-btn-danger !h-8 !w-8 shrink-0"
+                    title="Retirer de la partie"
+                    disabled={removingId === m.user._id}
+                    onClick={() => void removeMember(m.user._id, m.user.name)}
+                  >
+                    {removingId === m.user._id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <UserMinus className="h-4 w-4" />
+                    )}
+                  </button>
                 </li>
               ))}
               {(detail.members ?? []).length === 0 && (

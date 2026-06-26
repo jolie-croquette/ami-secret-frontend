@@ -88,6 +88,8 @@ export const adminApi = {
     id: string,
     body: { name?: string; numberOfWeeks?: number; reminderDayBefore?: number }
   ) => api.patch<AdminGameRow>(`/admin/games/${id}`, body),
+  removeGameMember: (gameId: string, userId: string) =>
+    api.del<{ ok: boolean }>(`/admin/games/${gameId}/members/${userId}`),
   deleteGame: (id: string) => api.del<{ ok: boolean }>(`/admin/games/${id}`),
   forceDraw: (id: string) => api.post<{ status: string }>(`/admin/games/${id}/force-draw`),
   forceReveal: (id: string) => api.post<{ status: string }>(`/admin/games/${id}/force-reveal`),
