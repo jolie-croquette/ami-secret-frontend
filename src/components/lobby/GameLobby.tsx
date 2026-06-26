@@ -155,11 +155,11 @@ export default function GameLobby({ admin }: { admin: boolean }) {
 
   const removePlayer = async (userId: string, name: string) => {
     if (!game) return;
-    if (!window.confirm(`Retirer ${name} de la partie ?`)) return;
+    if (!window.confirm(`Expulser ${name} de la partie ?`)) return;
     setBusyPlayer(userId);
     try {
       await gamesApi.removePlayer(game._id, userId);
-      toast.success(`${name} a été retiré.`);
+      toast.success(`${name} a été expulsé.`);
       await load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Action impossible.');
@@ -575,7 +575,8 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                 {game.players.map((p) => {
                   const isP_admin = game.adminIds.includes(p._id);
                   const isMe = me?.id === p._id;
-                  const canManage = admin && game.isAdmin && !isMe;
+                  // Tout organisateur peut gérer/expulser, peu importe la vue (joueur ou admin).
+                  const canManage = game.isAdmin && !isMe;
                   const playerBusy = busyPlayer === p._id;
                   return (
                     <li key={p._id} className="flex items-center gap-2 rounded-2xl border-2 border-camp-bark/15 bg-white/50 p-3">
@@ -609,7 +610,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                           {!isP_admin && !drawn && (
                             <button
                               className="icon-btn icon-btn-danger !h-8 !w-8"
-                              title="Retirer de la partie"
+                              title="Expulser de la partie"
                               disabled={playerBusy}
                               onClick={() => void removePlayer(p._id, p.name)}
                             >
