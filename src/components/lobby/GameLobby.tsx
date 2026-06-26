@@ -21,6 +21,7 @@ import {
   ShieldPlus,
   ShieldMinus,
   Settings,
+  ArrowRight,
 } from 'lucide-react';
 import { gamesApi } from '@/api/games';
 import { messagesApi } from '@/api/messages';
@@ -578,6 +579,30 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                     )}
                   </div>
                 )}
+
+                {/* Résultat du tirage — réservé à l'admin du site (modération) */}
+                {game.isSiteAdmin && game.assignments && game.assignments.length > 0 && (
+                  <div className="card-sign border-camp-ember/40 p-6">
+                    <h2 className="mb-1 flex items-center gap-2 font-display text-xl font-bold text-camp-pine-dark">
+                      <Eye className="h-5 w-5 text-camp-ember" /> Résultat du tirage
+                    </h2>
+                    <p className="mb-3 text-xs text-camp-bark">
+                      Visible uniquement par l’administration du site — qui offre à qui.
+                    </p>
+                    <ul className="space-y-1.5">
+                      {game.assignments.map((a) => (
+                        <li
+                          key={a.from._id}
+                          className="flex items-center gap-2 rounded-xl bg-camp-sand/30 px-3 py-2 text-sm"
+                        >
+                          <span className="font-semibold text-camp-pine-dark">{a.from.name}</span>
+                          <ArrowRight className="h-4 w-4 shrink-0 text-camp-ember" />
+                          <span className="font-semibold text-camp-pine">{a.to.name ?? '—'}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -624,7 +649,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                               <ShieldPlus className="h-4 w-4" />
                             )}
                           </button>
-                          {!isP_admin && !drawn && (
+                          {!isP_admin && (!drawn || game.isSiteAdmin) && (
                             <button
                               className="icon-btn icon-btn-danger !h-8 !w-8"
                               title="Expulser de la partie"

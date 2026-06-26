@@ -93,9 +93,13 @@ export interface GameDetails {
   adminUsers: GamePlayer[];
   adminIds: string[];
   isAdmin: boolean;
+  /** true si le visiteur est un admin du site (vue modération, voit le tirage). */
+  isSiteAdmin?: boolean;
   isMember: boolean;
   myWeeksReceived: number[];
   players: GamePlayer[];
+  /** Résultat du tirage (qui offre à qui) — fourni uniquement aux admins du site. */
+  assignments?: { from: { _id: string; name: string }; to: { _id: string; name: string | null } }[];
 }
 
 export interface TargetPreferences {

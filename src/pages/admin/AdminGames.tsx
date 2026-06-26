@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { adminApi, type ListGamesParams, type AdminGameDetail } from '@/api/admin';
+import { useNavigate } from 'react-router-dom';
+import { adminApi, type ListGamesParams } from '@/api/admin';
 import type { AdminGameRow, GameStatus } from '@/api/types';
 import { CampLoader } from '@/components/CampLoader';
 import ConfirmModal from '@/components/ConfirmModal';
@@ -14,10 +15,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Pencil,
-  UserMinus,
-  Loader2,
-  Gift,
-  ArrowRight,
 } from 'lucide-react';
 
 type StatusFilter = NonNullable<ListGamesParams['status']>;
@@ -42,6 +39,7 @@ function StatusBadge({ status }: { status: GameStatus }) {
 }
 
 export default function AdminGames() {
+  const navigate = useNavigate();
   const [rows, setRows] = useState<AdminGameRow[]>([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
@@ -52,9 +50,6 @@ export default function AdminGames() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const [confirm, setConfirm] = useState<{ kind: ConfirmKind; game: AdminGameRow } | null>(null);
-  const [detail, setDetail] = useState<AdminGameDetail | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [removingId, setRemovingId] = useState<string | null>(null);
 
   const [edit, setEdit] = useState<AdminGameRow | null>(null);
   const [editName, setEditName] = useState('');
@@ -89,41 +84,6 @@ export default function AdminGames() {
     void load({ page: 1, search: '', status: 'all' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const openDetail = async (g: AdminGameRow) => {
-    setDetailLoading(true);
-    setDetail({
-      _id: g._id,
-      name: g.name,
-      code: g.code,
-      status: g.status,
-      numberOfWeeks: g.numberOfWeeks,
-    });
-    try {
-      setDetail(await adminApi.getGame(g._id));
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Détails indisponibles.');
-      setDetail(null);
-    } finally {
-      setDetailLoading(false);
-    }
-  };
-
-  const removeMember = async (userId: string, name: string) => {
-    if (!detail) return;
-    if (!window.confirm(`Retirer ${name} de « ${detail.name} » ?`)) return;
-    setRemovingId(userId);
-    try {
-      await adminApi.removeGameMember(detail._id, userId);
-      toast.success(`${name} a été retiré de la partie.`);
-      setDetail(await adminApi.getGame(detail._id));
-      await load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Retrait impossible.');
-    } finally {
-      setRemovingId(null);
-    }
-  };
 
   const openEdit = (g: AdminGameRow) => {
     setEditName(g.name);
@@ -250,9 +210,9 @@ export default function AdminGames() {
                 <div className="flex flex-wrap items-center gap-1.5">
                   <button
                     className="icon-btn"
-                    title="Détails"
+                    title="Ouvrir la partie (vue organisateur)"
                     disabled={busy}
-                    onClick={() => void openDetail(g)}
+                    onClick={() => navigate(`/lobby/${g.code}/admin`)}
                   >
                     <Eye className="h-4 w-4" />
                   </button>
@@ -346,70 +306,6 @@ export default function AdminGames() {
         onCancel={() => setConfirm(null)}
         onConfirm={() => void runConfirm()}
       />
-
-      {/* Détails */}
-      <ConfirmModal
-        open={!!detail}
-        title={detail ? detail.name : 'Partie'}
-        confirmLabel="Fermer"
-        cancelLabel="Fermer"
-        onCancel={() => setDetail(null)}
-        onConfirm={() => setDetail(null)}
-      >
-        {detailLoading ? (
-          <p className="text-sm text-camp-bark">Chargement…</p>
-        ) : detail ? (
-          <div className="max-h-80 space-y-2 overflow-auto">
-            <p className="text-sm text-camp-bark">
-              Code <span className="font-mono font-bold">{detail.code}</span> · {detail.numberOfWeeks}{' '}
-              semaines · statut {STATUS_LABEL[detail.status]}
-            </p>
-            {detail.status === 'lobby' ? (
-              <p className="rounded-xl bg-camp-sand/40 px-3 py-2 text-xs text-camp-bark">
-                Le tirage n’a pas encore été effectué — aucune attribution à afficher.
-              </p>
-            ) : (
-              <p className="flex items-center gap-1.5 text-xs font-semibold text-camp-bark">
-                <Gift className="h-3.5 w-3.5 text-camp-pine" /> Résultat du tirage : qui offre à qui
-              </p>
-            )}
-            <ul className="divide-y divide-camp-bark/10">
-              {(detail.members ?? []).map((m) => (
-                <li key={m.user._id} className="flex items-center justify-between gap-2 py-2 text-sm">
-                  <div className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold text-camp-pine-dark">
-                      {m.user.name}
-                    </span>
-                    {m.secretFriend && (
-                      <span className="flex items-center gap-1 truncate text-xs text-camp-bark">
-                        <ArrowRight className="h-3 w-3 shrink-0 text-camp-pine" />
-                        offre à{' '}
-                        <span className="font-semibold text-camp-pine">{m.secretFriend.name}</span>
-                      </span>
-                    )}
-                  </div>
-                  <span className="shrink-0 text-camp-bark">{m.weeksReceived?.length ?? 0} reçus</span>
-                  <button
-                    className="icon-btn icon-btn-danger !h-8 !w-8 shrink-0"
-                    title="Retirer de la partie"
-                    disabled={removingId === m.user._id}
-                    onClick={() => void removeMember(m.user._id, m.user.name)}
-                  >
-                    {removingId === m.user._id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <UserMinus className="h-4 w-4" />
-                    )}
-                  </button>
-                </li>
-              ))}
-              {(detail.members ?? []).length === 0 && (
-                <li className="py-2 text-sm text-camp-bark">Aucun membre.</li>
-              )}
-            </ul>
-          </div>
-        ) : null}
-      </ConfirmModal>
 
       {/* Édition d'une partie */}
       <ConfirmModal
