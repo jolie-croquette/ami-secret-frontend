@@ -4,6 +4,13 @@ export type GameStatus = 'lobby' | 'drawn' | 'revealed';
 
 export type UserRole = 'user' | 'admin';
 
+/** Une idée de cadeau de la liste de souhaits. */
+export interface WishlistItem {
+  title: string;
+  url?: string;
+  price?: string;
+}
+
 export interface AuthUser {
   _id: string;
   name: string;
@@ -15,8 +22,26 @@ export interface AuthUser {
   favoriteColor?: string;
   favoriteAnimal?: string;
   allergies: string[];
+  wishlist?: WishlistItem[];
   onBoarded: boolean;
   isOnboarded?: boolean;
+}
+
+export type NotificationType = 'message' | 'draw' | 'reveal' | 'removed';
+
+export interface AppNotification {
+  _id: string;
+  type: NotificationType;
+  title: string;
+  gameCode?: string;
+  link?: string;
+  readAt?: string;
+  createdAt: string;
+}
+
+export interface NotificationList {
+  items: AppNotification[];
+  unreadCount: number;
 }
 
 /** Réponse paginée générique de l'API admin. */
@@ -110,6 +135,7 @@ export interface TargetPreferences {
   favoriteColor?: string;
   favoriteAnimal?: string;
   allergies: string[];
+  wishlist?: WishlistItem[];
 }
 
 export interface InboxMessage {

@@ -1,5 +1,5 @@
 import { api } from './client';
-import type { AuthUser, TargetPreferences } from './types';
+import type { AuthUser, TargetPreferences, WishlistItem } from './types';
 
 export interface OnboardPayload {
   likes: string[];
@@ -7,6 +7,7 @@ export interface OnboardPayload {
   allergies: string[];
   color: string;
   animal: string;
+  wishlist?: WishlistItem[];
 }
 
 export const userApi = {

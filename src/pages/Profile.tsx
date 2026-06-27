@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '@/context/AuthContext';
 import { motion } from 'motion/react';
 import { toast, ToastContainer } from 'react-toastify';
-import { X, Heart, HeartCrack, ShieldAlert, Palette, PawPrint, Loader2, Mail } from 'lucide-react';
+import { X, Heart, HeartCrack, ShieldAlert, Palette, PawPrint, Loader2, Mail, Gift } from 'lucide-react';
 import { userApi } from '@/api/user';
+import type { WishlistItem } from '@/api/types';
+import WishlistEditor from '@/components/WishlistEditor';
 import { MeritBadge } from '@/components/visuals/CampVisuals';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -79,6 +81,7 @@ export default function PlayerProfilePage() {
   const [allergies, setAllergies] = useState<string[]>([]);
   const [color, setColor] = useState('');
   const [animal, setAnimal] = useState('');
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -94,6 +97,7 @@ export default function PlayerProfilePage() {
         setAllergies(data.allergies ?? []);
         setColor(data.favoriteColor ?? '');
         setAnimal(data.favoriteAnimal ?? '');
+        setWishlist(data.wishlist ?? []);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Erreur de chargement.');
       } finally {
@@ -110,7 +114,16 @@ export default function PlayerProfilePage() {
     if (!color.trim() || !animal.trim()) return toast.warning('Couleur et animal sont requis.');
     setSaving(true);
     try {
-      await userApi.onboard({ likes, dislikes, allergies, color: color.trim(), animal: animal.trim() });
+      await userApi.onboard({
+        likes,
+        dislikes,
+        allergies,
+        color: color.trim(),
+        animal: animal.trim(),
+        wishlist: wishlist
+          .map((w) => ({ title: w.title.trim(), url: w.url?.trim() || undefined, price: w.price?.trim() || undefined }))
+          .filter((w) => w.title),
+      });
       await auth?.refresh();
       toast.success('Profil mis à jour.');
     } catch (err) {
@@ -161,6 +174,16 @@ export default function PlayerProfilePage() {
                 </label>
                 <input value={animal} onChange={(e) => setAnimal(e.target.value)} placeholder="Ex : Renard" className="field" />
               </div>
+            </div>
+
+            <div>
+              <label className="field-label flex items-center gap-2">
+                <Gift className="h-4 w-4 text-camp-pine" /> Liste de souhaits
+              </label>
+              <p className="mb-2 text-xs text-camp-bark">
+                Des idées précises (avec lien et prix) pour aider ton ami secret.
+              </p>
+              <WishlistEditor items={wishlist} onChange={setWishlist} />
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">

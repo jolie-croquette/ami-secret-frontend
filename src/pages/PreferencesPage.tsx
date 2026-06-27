@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { userApi } from '@/api/user';
 import { tokenStore } from '@/api/client';
+import type { WishlistItem } from '@/api/types';
+import WishlistEditor from '@/components/WishlistEditor';
 import 'react-toastify/dist/ReactToastify.css';
 
 const COLOR_SUGGESTIONS = ['Bleu', 'Bleu pastel', 'Lavande', 'Vert', 'Jaune', 'Rouge', 'Rose', 'Turquoise', 'Violet'];
@@ -91,7 +93,7 @@ function AnswerList({
   );
 }
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
 
 export default function PreferencesPage() {
   const [likes, setLikes] = useState<string[]>(['']);
@@ -99,6 +101,7 @@ export default function PreferencesPage() {
   const [allergies, setAllergies] = useState<string[]>(['']);
   const [color, setColor] = useState('');
   const [animal, setAnimal] = useState('');
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
@@ -116,25 +119,26 @@ export default function PreferencesPage() {
       if (Array.isArray(d.allergies) && d.allergies.length) setAllergies(d.allergies);
       if (typeof d.color === 'string') setColor(d.color);
       if (typeof d.animal === 'string') setAnimal(d.animal);
+      if (Array.isArray(d.wishlist)) setWishlist(d.wishlist);
     } catch {
       /* ignore */
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('prefs_draft', JSON.stringify({ likes, dislikes, allergies, color, animal }));
-  }, [likes, dislikes, allergies, color, animal]);
+    localStorage.setItem('prefs_draft', JSON.stringify({ likes, dislikes, allergies, color, animal, wishlist }));
+  }, [likes, dislikes, allergies, color, animal, wishlist]);
 
   const canAdvance = (): boolean => {
     if (step === 0 && clean(likes).length === 0) {
       toast.warning('Ajoute au moins une chose que tu aimes.');
       return false;
     }
-    if (step === 3 && !color.trim()) {
+    if (step === 4 && !color.trim()) {
       toast.warning('Indique ta couleur préférée.');
       return false;
     }
-    if (step === 4 && !animal.trim()) {
+    if (step === 5 && !animal.trim()) {
       toast.warning('Indique ton animal préféré.');
       return false;
     }
@@ -158,11 +162,11 @@ export default function PreferencesPage() {
       return toast.warning('Ajoute au moins une chose que tu aimes.');
     }
     if (!color.trim()) {
-      setStep(3);
+      setStep(4);
       return toast.warning('Indique ta couleur préférée.');
     }
     if (!animal.trim()) {
-      setStep(4);
+      setStep(5);
       return toast.warning('Indique ton animal préféré.');
     }
 
@@ -174,6 +178,9 @@ export default function PreferencesPage() {
         allergies: clean(allergies),
         color: color.trim(),
         animal: animal.trim(),
+        wishlist: wishlist
+          .map((w) => ({ title: w.title.trim(), url: w.url?.trim() || undefined, price: w.price?.trim() || undefined }))
+          .filter((w) => w.title),
       });
       await auth?.refresh();
       localStorage.removeItem('prefs_draft');
@@ -206,6 +213,11 @@ export default function PreferencesPage() {
       content: (
         <AnswerList values={allergies} onChange={setAllergies} icon={ShieldAlert} placeholder="Ex : arachides" />
       ),
+    },
+    {
+      title: 'Ta liste de souhaits',
+      subtitle: 'Optionnel — des idées précises (titre, lien, prix) pour ton ami secret.',
+      content: <WishlistEditor items={wishlist} onChange={setWishlist} />,
     },
     {
       title: 'Ta couleur préférée',
@@ -257,6 +269,12 @@ export default function PreferencesPage() {
           <Recap label="J'aime" values={clean(likes)} />
           <Recap label="Je n'aime pas" values={clean(dislikes)} />
           <Recap label="Allergies" values={clean(allergies)} />
+          <Recap
+            label="Liste de souhaits"
+            values={wishlist
+              .filter((w) => w.title.trim())
+              .map((w) => w.title.trim() + (w.price?.trim() ? ` (${w.price.trim()})` : ''))}
+          />
           <Recap label="Couleur préférée" values={color.trim() ? [color.trim()] : []} />
           <Recap label="Animal préféré" values={animal.trim() ? [animal.trim()] : []} />
         </dl>

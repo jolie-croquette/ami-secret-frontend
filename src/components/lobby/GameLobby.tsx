@@ -458,6 +458,39 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                             <p className="field-label">Allergies</p>
                             <Chips items={target.allergies} tone="bg-camp-sun/30 text-camp-bark" />
                           </div>
+                          {target.wishlist && target.wishlist.length > 0 && (
+                            <div className="sm:col-span-2">
+                              <p className="field-label flex items-center gap-1.5">
+                                <Gift className="h-4 w-4 text-camp-ember" /> Idées de cadeaux
+                              </p>
+                              <ul className="space-y-1.5">
+                                {target.wishlist.map((w, i) => (
+                                  <li
+                                    key={i}
+                                    className="flex flex-wrap items-center gap-x-2 rounded-xl border-2 border-camp-bark/15 bg-white/60 px-3 py-2 text-sm"
+                                  >
+                                    {w.url ? (
+                                      <a
+                                        href={w.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="font-semibold text-camp-pine underline underline-offset-2 hover:text-camp-pine-dark"
+                                      >
+                                        {w.title}
+                                      </a>
+                                    ) : (
+                                      <span className="font-semibold text-camp-ink">{w.title}</span>
+                                    )}
+                                    {w.price && (
+                                      <span className="rounded-full bg-camp-sand px-2 py-0.5 text-xs font-bold text-camp-bark">
+                                        {w.price}
+                                      </span>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) : (

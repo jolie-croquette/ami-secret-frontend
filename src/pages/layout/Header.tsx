@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { TreePine, UserRound, LayoutGrid, LogIn, Plus, LogOut, ChevronDown, ShieldCheck } from 'lucide-react';
+import NotificationBell from '@/components/NotificationBell';
 
 function capitalizeWords(s?: string) {
   if (!s) return '';
@@ -69,7 +70,9 @@ export default function Header() {
         </Link>
 
         {auth?.user && (
-          <div className="relative" ref={dropdownRef}>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setOpen((v) => !v)}
               aria-haspopup="menu"
@@ -117,6 +120,7 @@ export default function Header() {
                 </motion.div>
               )}
             </AnimatePresence>
+            </div>
           </div>
         )}
       </div>
