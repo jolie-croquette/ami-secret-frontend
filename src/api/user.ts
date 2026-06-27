@@ -14,4 +14,6 @@ export const userApi = {
   onboard: (payload: OnboardPayload) => api.post<AuthUser>('/user/onboard', payload),
   preferences: (id: string) =>
     api.get<TargetPreferences & { email?: string }>(`/user/preferences/${id}`),
+  seenUpdate: (version: string) =>
+    api.patch<{ lastSeenUpdate: string }>('/user/seen-update', { version }),
 };

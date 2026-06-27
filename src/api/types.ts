@@ -25,6 +25,8 @@ export interface AuthUser {
   wishlist?: WishlistItem[];
   onBoarded: boolean;
   isOnboarded?: boolean;
+  /** Version de la dernière note de mise à jour vue par l'utilisateur. */
+  lastSeenUpdate?: string;
 }
 
 export type NotificationType = 'message' | 'draw' | 'reveal' | 'removed';
