@@ -13,13 +13,14 @@ export interface UpdateNote {
 }
 
 export const UPDATE_NOTE: UpdateNote = {
-  version: '2026-06-29',
+  version: '2026-06-29b',
   date: '29 juin 2026',
   title: 'Quoi de neuf',
   items: [
+    'Nouvelle icône : le cadeau a été redessiné pour être plus propre, visible dans l’onglet du navigateur et sur ton écran d’accueil.',
+    'Notifications push : tu peux maintenant recevoir une alerte directement sur ton téléphone ou ton ordinateur quand tu reçois un message ou que le tirage est fait — accepte simplement la demande qui s’affiche en bas de l’écran.',
     'Sécurité : la connexion fonctionne maintenant correctement sur tous les téléphones (le bogue qui bloquait certains iPhone est réglé), et les échanges entre le site et le serveur sont mieux protégés contre les abus.',
-    'Icône de l’application : Ami Secret a maintenant sa propre icône (visible dans l’onglet du navigateur et sur ton téléphone).',
-    'Installation sur ton téléphone : tu peux maintenant ajouter Ami Secret à ton écran d’accueil pour l’ouvrir comme une vraie application — voir « Comment l’installer » ci-dessous.',
+    'Installation sur ton téléphone : tu peux ajouter Ami Secret à ton écran d’accueil pour l’ouvrir comme une vraie application — voir « Comment l’installer » ci-dessous.',
     'Espace administrateur : section « Notifications » pour suivre les notifications envoyées aux participants.',
   ],
 };
