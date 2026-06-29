@@ -6,8 +6,6 @@
 
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000';
 
-const TOKEN_KEY = 'token';
-
 export interface ApiErrorDetail {
   path: string;
   message: string;
@@ -25,20 +23,12 @@ export class ApiError extends Error {
   }
 }
 
-export const tokenStore = {
-  get: (): string | null => localStorage.getItem(TOKEN_KEY),
-  set: (token: string) => localStorage.setItem(TOKEN_KEY, token),
-  clear: () => localStorage.removeItem(TOKEN_KEY),
-};
-
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = tokenStore.get();
-
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });

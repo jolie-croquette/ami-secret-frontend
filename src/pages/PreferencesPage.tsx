@@ -17,7 +17,6 @@ import {
   Check,
 } from 'lucide-react';
 import { userApi } from '@/api/user';
-import { tokenStore } from '@/api/client';
 import type { WishlistItem } from '@/api/types';
 import WishlistEditor from '@/components/WishlistEditor';
 import 'react-toastify/dist/ReactToastify.css';
@@ -152,7 +151,7 @@ export default function PreferencesPage() {
   const prev = () => setStep((s) => Math.max(s - 1, 0));
 
   const handleSubmit = async () => {
-    if (!tokenStore.get()) {
+    if (!auth?.user) {
       toast.error('Non authentifié.');
       return navigate('/');
     }
