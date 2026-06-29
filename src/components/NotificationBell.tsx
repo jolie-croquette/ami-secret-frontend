@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { Bell, Gift, Sparkles, Inbox, UserMinus, BellOff } from 'lucide-react';
+import { Bell, Gift, Sparkles, Inbox, UserMinus, BellOff, Camera } from 'lucide-react';
 import { AuthContext } from '@/context/AuthContext';
 import { notificationsApi } from '@/api/notifications';
 import type { AppNotification, NotificationType } from '@/api/types';
@@ -13,6 +13,7 @@ const ICONS: Record<NotificationType, typeof Bell> = {
   draw: Gift,
   reveal: Sparkles,
   removed: UserMinus,
+  'gift-photo': Camera,
 };
 
 /** Date relative compacte en français (« à l'instant », « il y a 5 min »…). */
