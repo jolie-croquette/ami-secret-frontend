@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Camera, Loader2, X } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { giftPhotoApi } from '@/api/giftPhoto';
 
 /**
@@ -27,11 +28,11 @@ export default function GiftPhotoPrompt({
     try {
       await giftPhotoApi.upload(code, { week, photo: file });
       onUploaded();
-    } catch {
-      /* on ferme quand même : pas bloquant */
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Échec de l'envoi de la photo.");
     } finally {
       setBusy(false);
-      onClose();
     }
   };
 
