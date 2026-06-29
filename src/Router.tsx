@@ -23,6 +23,7 @@ const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'));
 const AdminOverview = lazy(() => import('@/pages/admin/AdminOverview'));
 const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'));
 const AdminGames = lazy(() => import('@/pages/admin/AdminGames'));
+const AdminNotifications = lazy(() => import('@/pages/admin/AdminNotifications'));
 
 const NotFound = () => (
   <div className="min-h-screen flex items-center justify-center bg-camp-cream bg-topo text-center p-8">
@@ -148,6 +149,7 @@ export const router = createBrowserRouter([
           { index: true, element: withSuspense(<AdminOverview />) },
           { path: 'users', element: withSuspense(<AdminUsers />) },
           { path: 'games', element: withSuspense(<AdminGames />) },
+          { path: 'notifications', element: withSuspense(<AdminNotifications />) },
         ],
       },
 

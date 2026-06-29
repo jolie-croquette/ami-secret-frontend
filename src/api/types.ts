@@ -58,6 +58,7 @@ export interface Paginated<T> {
 export interface AdminStats {
   users: { total: number; banned: number; admins: number; onboarded: number };
   games: { total: number; lobby: number; drawn: number; revealed: number };
+  notifications: AdminNotificationStats;
 }
 
 export interface AdminUserRow {
@@ -71,6 +72,22 @@ export interface AdminUserRow {
   onBoarded: boolean;
   createdAt?: string;
   lastLogin?: string;
+}
+
+export interface AdminNotificationStats {
+  total: number;
+  unread: number;
+}
+
+export interface AdminNotificationRow {
+  _id: string;
+  type: NotificationType;
+  title: string;
+  gameCode?: string;
+  link?: string;
+  readAt?: string;
+  createdAt: string;
+  user?: { _id: string; name: string; email?: string } | null;
 }
 
 export interface AdminGameRow {
