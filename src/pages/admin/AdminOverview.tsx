@@ -12,6 +12,8 @@ import {
   Hourglass,
   Shuffle,
   Sparkles,
+  Bell,
+  BellRing,
 } from 'lucide-react';
 
 function StatCard({
@@ -178,6 +180,14 @@ export default function AdminOverview() {
           <StatCard icon={Hourglass} label="En attente (lobby)" value={stats.games.lobby} />
           <StatCard icon={Shuffle} label="Tirées" value={stats.games.drawn} />
           <StatCard icon={Sparkles} label="Révélées" value={stats.games.revealed} />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 font-display text-xl font-black text-camp-pine-dark">Notifications</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <StatCard icon={Bell} label="Total" value={stats.notifications.total} />
+          <StatCard icon={BellRing} label="Non lues" value={stats.notifications.unread} />
         </div>
       </section>
 
