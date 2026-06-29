@@ -3,7 +3,7 @@ import { adminApi, type ListNotificationsParams } from '@/api/admin';
 import type { AdminNotificationRow, NotificationType } from '@/api/types';
 import { CampLoader } from '@/components/CampLoader';
 import { toast } from 'react-toastify';
-import { Search, ChevronLeft, ChevronRight, MessageSquare, Shuffle, Sparkles, UserX } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, MessageSquare, Shuffle, Sparkles, UserX, Camera } from 'lucide-react';
 
 type TypeFilter = NonNullable<ListNotificationsParams['type']>;
 type StatusFilter = NonNullable<ListNotificationsParams['status']>;
@@ -15,6 +15,7 @@ const TYPE_LABEL: Record<NotificationType, string> = {
   draw: 'Tirage',
   reveal: 'Révélation',
   removed: 'Retrait',
+  'gift-photo': 'Photo de cadeau',
 };
 
 const TYPE_ICON: Record<NotificationType, typeof MessageSquare> = {
@@ -22,6 +23,7 @@ const TYPE_ICON: Record<NotificationType, typeof MessageSquare> = {
   draw: Shuffle,
   reveal: Sparkles,
   removed: UserX,
+  'gift-photo': Camera,
 };
 
 function TypeBadge({ type }: { type: NotificationType }) {

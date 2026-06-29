@@ -24,11 +24,14 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  // Pour un FormData, on laisse le navigateur poser le Content-Type
+  // (multipart/form-data avec sa boundary) — ne pas le forcer en JSON.
+  const isFormData = options.body instanceof FormData;
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     credentials: 'include',
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...options.headers,
     },
   });
@@ -51,4 +54,5 @@ export const api = {
     request<T>(path, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined }),
   del: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: 'DELETE', body: body ? JSON.stringify(body) : undefined }),
+  postForm: <T>(path: string, formData: FormData) => request<T>(path, { method: 'POST', body: formData }),
 };

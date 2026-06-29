@@ -29,7 +29,7 @@ export interface AuthUser {
   lastSeenUpdate?: string;
 }
 
-export type NotificationType = 'message' | 'draw' | 'reveal' | 'removed';
+export type NotificationType = 'message' | 'draw' | 'reveal' | 'removed' | 'gift-photo';
 
 export interface AppNotification {
   _id: string;

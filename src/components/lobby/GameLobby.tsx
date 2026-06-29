@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { gamesApi } from '@/api/games';
 import { messagesApi } from '@/api/messages';
+import { giftPhotoApi, type GiftPhoto } from '@/api/giftPhoto';
 import { ApiError } from '@/api/client';
 import type {
   GameDetails,
@@ -35,6 +36,8 @@ import type {
 } from '@/api/types';
 import { MeritBadge, Tent, Campfire, CampScene } from '@/components/visuals/CampVisuals';
 import ProgressViz from '@/components/lobby/ProgressViz';
+import GiftPhotoPrompt from '@/components/lobby/GiftPhotoPrompt';
+import GiftPhotoFeed from '@/components/lobby/GiftPhotoFeed';
 import 'react-toastify/dist/ReactToastify.css';
 
 const STATUS_META: Record<GameStatus, { label: string; classes: string }> = {
@@ -78,6 +81,9 @@ export default function GameLobby({ admin }: { admin: boolean }) {
   const [progress, setProgress] = useState<GameProgress | null>(null);
   const [acting, setActing] = useState(false);
 
+  const [photos, setPhotos] = useState<GiftPhoto[]>([]);
+  const [photoPromptWeek, setPhotoPromptWeek] = useState<number | null>(null);
+
   // Gestion organisateur : édition des détails + gestion des joueurs.
   const [editName, setEditName] = useState('');
   const [editWeeks, setEditWeeks] = useState(7);
@@ -105,6 +111,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
       if (g.status !== 'lobby' && g.isMember) {
         gamesApi.myTarget(code).then(setTarget).catch(() => setTarget(null));
         messagesApi.inbox(code).then(setMessages).catch(() => setMessages([]));
+        giftPhotoApi.list(code).then(setPhotos).catch(() => setPhotos([]));
       }
       if (admin && g.isAdmin && g.status !== 'lobby') {
         gamesApi.progress(code).then(setProgress).catch(() => setProgress(null));
@@ -236,6 +243,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
     try {
       const res = await gamesApi.markWeek(code, week, received);
       setWeeksReceived(res.weeksReceived);
+      if (received) setPhotoPromptWeek(week);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erreur.');
     } finally {
@@ -535,6 +543,16 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                   </div>
                 )}
 
+                {/* Fil de photos de la partie */}
+                {game.isMember && (
+                  <div className="card-sign p-6">
+                    <h2 className="mb-3 flex items-center gap-2 font-display text-xl font-bold text-camp-pine-dark">
+                      <Gift className="h-5 w-5 text-camp-berry" /> Photos de la partie
+                    </h2>
+                    <GiftPhotoFeed photos={photos} />
+                  </div>
+                )}
+
                 {/* Messages anonymes */}
                 {game.isMember && (
                   <div className="card-sign p-6">
@@ -711,6 +729,18 @@ export default function GameLobby({ admin }: { admin: boolean }) {
 
       <CampScene className="pointer-events-none absolute bottom-0 left-0 h-28 w-full" />
       <ToastContainer position="top-center" autoClose={3500} theme="colored" />
+
+      {photoPromptWeek !== null && (
+        <GiftPhotoPrompt
+          code={code}
+          week={photoPromptWeek}
+          onClose={() => setPhotoPromptWeek(null)}
+          onUploaded={() => {
+            toast.success('Photo partagée avec la partie !');
+            giftPhotoApi.list(code).then(setPhotos).catch(() => {});
+          }}
+        />
+      )}
     </div>
   );
 }
