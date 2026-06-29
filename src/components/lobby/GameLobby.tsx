@@ -298,7 +298,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
     );
   }
 
-  const status = STATUS_META[game.status];
+  const status = STATUS_META[game.status] ?? STATUS_META.lobby;
   const drawn = game.status !== 'lobby';
 
   return (
