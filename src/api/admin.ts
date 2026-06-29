@@ -3,9 +3,11 @@ import type {
   AdminStats,
   AdminUserRow,
   AdminGameRow,
+  AdminNotificationRow,
   Paginated,
   GameStatus,
   UserRole,
+  NotificationType,
 } from './types';
 
 const qs = (params: Record<string, string | number | undefined>): string => {
@@ -27,6 +29,14 @@ export interface ListUsersParams {
 export interface ListGamesParams {
   search?: string;
   status?: 'all' | GameStatus;
+  page?: number;
+  limit?: number;
+}
+
+export interface ListNotificationsParams {
+  search?: string;
+  type?: 'all' | NotificationType;
+  status?: 'all' | 'read' | 'unread';
   page?: number;
   limit?: number;
 }
@@ -93,4 +103,9 @@ export const adminApi = {
   deleteGame: (id: string) => api.del<{ ok: boolean }>(`/admin/games/${id}`),
   forceDraw: (id: string) => api.post<{ status: string }>(`/admin/games/${id}/force-draw`),
   forceReveal: (id: string) => api.post<{ status: string }>(`/admin/games/${id}/force-reveal`),
+
+  listNotifications: (p: ListNotificationsParams = {}) =>
+    api.get<Paginated<AdminNotificationRow>>(
+      `/admin/notifications${qs(p as Record<string, string | number | undefined>)}`
+    ),
 };
