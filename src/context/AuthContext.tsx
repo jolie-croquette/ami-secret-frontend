@@ -1,6 +1,5 @@
 import { createContext, useState, useEffect, type ReactNode, type Dispatch, type SetStateAction } from 'react';
 import { authApi } from '@/api/auth';
-import { tokenStore } from '@/api/client';
 import type { AuthUser } from '@/api/types';
 import { CampLoader } from '@/components/CampLoader';
 
@@ -19,7 +18,7 @@ type AuthContextType = {
   isAdmin: boolean;
   signup: (name: string, email: string, password: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refresh: () => Promise<void>;
   setUser: Dispatch<SetStateAction<User | null>>;
 };
@@ -31,15 +30,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const refresh = async () => {
-    if (!tokenStore.get()) {
-      setUser(null);
-      return;
-    }
     try {
       const data = await authApi.me();
       setUser({ ...data, id: data._id });
     } catch {
-      tokenStore.clear();
       setUser(null);
     }
   };
@@ -61,8 +55,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await refresh();
   };
 
-  const logout = () => {
-    authApi.logout();
+  const logout = async () => {
+    await authApi.logout();
     setUser(null);
   };
 
