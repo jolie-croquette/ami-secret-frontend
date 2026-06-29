@@ -7,6 +7,12 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { router }  from './Router'
 import './index.css'
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {
+    /* pas bloquant : le push restera simplement indisponible */
+  })
+}
+
 createRoot(document.getElementById('root')!).render(
   <ErrorBoundary>
     <AuthProvider>
