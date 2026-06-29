@@ -1,9 +1,9 @@
 import { useContext, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Sparkles, Check, X } from 'lucide-react';
+import { Sparkles, Check, X, Smartphone } from 'lucide-react';
 import { AuthContext } from '@/context/AuthContext';
 import { userApi } from '@/api/user';
-import { UPDATE_NOTE } from '@/content/updateNote';
+import { UPDATE_NOTE, PWA_INSTALL_INSTRUCTIONS } from '@/content/updateNote';
 
 /**
  * Affiche la note de mise à jour une seule fois par utilisateur (suivi en base
@@ -86,6 +86,34 @@ export default function UpdateNoteModal() {
                 </li>
               ))}
             </ul>
+
+            <details className="mb-6 rounded-2xl border-2 border-camp-bark/15 bg-white/50 p-4">
+              <summary className="flex cursor-pointer items-center gap-2 font-display text-sm font-bold text-camp-pine-dark">
+                <Smartphone className="h-4 w-4" /> Comment l’installer sur ton téléphone ?
+              </summary>
+              <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-camp-bark/70">
+                    iPhone (Safari)
+                  </p>
+                  <ol className="list-decimal space-y-1 pl-4 text-sm text-camp-ink">
+                    {PWA_INSTALL_INSTRUCTIONS.ios.map((step, i) => (
+                      <li key={i}>{step}</li>
+                    ))}
+                  </ol>
+                </div>
+                <div>
+                  <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-camp-bark/70">
+                    Android (Chrome)
+                  </p>
+                  <ol className="list-decimal space-y-1 pl-4 text-sm text-camp-ink">
+                    {PWA_INSTALL_INSTRUCTIONS.android.map((step, i) => (
+                      <li key={i}>{step}</li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            </details>
 
             <button
               type="button"
