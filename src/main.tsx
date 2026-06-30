@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/react'
 import { AuthProvider } from './context/AuthContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import InstallPrompt from './components/InstallPrompt'
 import { router }  from './Router'
 import './index.css'
 
@@ -19,6 +20,7 @@ createRoot(document.getElementById('root')!).render(
       <RouterProvider router={router}/>
       <Analytics />
       <SpeedInsights />
+      <InstallPrompt />
     </AuthProvider>
   </ErrorBoundary>
 )

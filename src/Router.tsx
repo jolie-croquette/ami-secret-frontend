@@ -28,6 +28,7 @@ const AdminPrivacyRequests = lazy(() => import('@/pages/admin/AdminPrivacyReques
 
 const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
 const TermsOfUse = lazy(() => import('@/pages/TermsOfUse'));
+const SharePhoto = lazy(() => import('@/pages/SharePhoto'));
 
 const NotFound = () => (
   <div className="min-h-screen flex items-center justify-center bg-camp-cream bg-topo text-center p-8">
@@ -142,6 +143,16 @@ export const router = createBrowserRouter([
       // pages légales (publiques)
       { path: '/privacy', element: withSuspense(<PrivacyPolicy />) },
       { path: '/terms', element: withSuspense(<TermsOfUse />) },
+
+      // PWA share target
+      {
+        path: '/share-photo',
+        element: withSuspense(
+          <RequireAuth>
+            <SharePhoto />
+          </RequireAuth>
+        ),
+      },
 
       // espace administrateur
       {
