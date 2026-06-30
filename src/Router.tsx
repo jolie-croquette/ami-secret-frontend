@@ -25,6 +25,9 @@ const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'));
 const AdminGames = lazy(() => import('@/pages/admin/AdminGames'));
 const AdminNotifications = lazy(() => import('@/pages/admin/AdminNotifications'));
 
+const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
+const TermsOfUse = lazy(() => import('@/pages/TermsOfUse'));
+
 const NotFound = () => (
   <div className="min-h-screen flex items-center justify-center bg-camp-cream bg-topo text-center p-8">
     <div className="card-sign p-10 max-w-md">
@@ -134,6 +137,10 @@ export const router = createBrowserRouter([
       // mot de passe (public)
       { path: '/forgot-password', element: withSuspense(<ForgotPassword />) },
       { path: '/reset-password', element: withSuspense(<ResetPassword />) },
+
+      // pages légales (publiques)
+      { path: '/privacy', element: withSuspense(<PrivacyPolicy />) },
+      { path: '/terms', element: withSuspense(<TermsOfUse />) },
 
       // espace administrateur
       {
