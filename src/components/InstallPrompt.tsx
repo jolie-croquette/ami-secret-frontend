@@ -43,7 +43,7 @@ export default function InstallPrompt() {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 z-[150] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-2xl border-2 border-camp-pine/20 bg-camp-cream shadow-xl">
+    <div className="fixed bottom-4 left-1/2 z-[140] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-2xl border-2 border-camp-pine/20 bg-camp-cream shadow-xl">
       <div className="flex items-start gap-3 p-4">
         <img src="/icon-192.png" alt="" className="h-12 w-12 flex-shrink-0 rounded-xl" />
         <div className="flex-1 min-w-0">
