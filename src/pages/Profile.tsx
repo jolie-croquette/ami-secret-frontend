@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '@/context/AuthContext';
 import { motion } from 'motion/react';
 import { toast, ToastContainer } from 'react-toastify';
-import { X, Heart, HeartCrack, ShieldAlert, Palette, PawPrint, Loader2, Mail, Gift, ShieldCheck, ChevronDown } from 'lucide-react';
+import { X, Heart, HeartCrack, ShieldAlert, Palette, PawPrint, Loader2, Mail, Gift, ShieldCheck, ChevronDown, Bell, BellOff, BellRing } from 'lucide-react';
 import { userApi } from '@/api/user';
 import type { WishlistItem } from '@/api/types';
 import WishlistEditor from '@/components/WishlistEditor';
@@ -15,6 +15,8 @@ import {
   type PrivacyRequestType,
   type PrivacyRequest,
 } from '@/api/privacyRequest';
+import { pushApi } from '@/api/push';
+import { urlBase64ToUint8Array } from '@/lib/push';
 import 'react-toastify/dist/ReactToastify.css';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -93,6 +95,177 @@ function TagInput({
   );
 }
 
+type PushPermission = 'default' | 'granted' | 'denied' | 'unsupported';
+
+function NotificationSection() {
+  const [open, setOpen] = useState(false);
+  const [permission, setPermission] = useState<PushPermission>('default');
+  const [subscribed, setSubscribed] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const supported =
+    typeof window !== 'undefined' &&
+    'serviceWorker' in navigator &&
+    'PushManager' in window &&
+    'Notification' in window;
+
+  const refreshState = async () => {
+    if (!supported) {
+      setPermission('unsupported');
+      return;
+    }
+    setPermission(Notification.permission as PushPermission);
+    if (Notification.permission === 'granted') {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        setSubscribed(!!sub);
+      } catch {
+        setSubscribed(false);
+      }
+    } else {
+      setSubscribed(false);
+    }
+  };
+
+  useEffect(() => {
+    if (open) void refreshState();
+  }, [open]);
+
+  const subscribe = async () => {
+    setBusy(true);
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') {
+        setPermission(perm as PushPermission);
+        return;
+      }
+      const { publicKey } = await pushApi.getPublicKey();
+      if (!publicKey) throw new Error('Clé publique manquante.');
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+      const raw = sub.toJSON();
+      await pushApi.subscribe({
+        endpoint: sub.endpoint,
+        keys: { p256dh: raw.keys!.p256dh, auth: raw.keys!.auth },
+      });
+      await refreshState();
+      toast.success('Notifications activées sur cet appareil.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur d'activation.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const unsubscribe = async () => {
+    setBusy(true);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await pushApi.unsubscribe(sub.endpoint);
+        await sub.unsubscribe();
+      }
+      await refreshState();
+      toast.success('Notifications désactivées pour cet appareil.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur de désactivation.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="card-sign mt-4">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between p-6"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <div className="flex items-center gap-3">
+          <Bell className="h-5 w-5 text-camp-pine" />
+          <span className="font-display text-lg font-bold text-camp-pine-dark">Notifications</span>
+        </div>
+        <ChevronDown className={`h-5 w-5 text-camp-bark transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="space-y-4 border-t border-camp-bark/10 px-6 pb-6 pt-4">
+          {permission === 'unsupported' && (
+            <div className="flex items-start gap-3 rounded-xl bg-camp-sand/60 p-4 text-sm text-camp-bark">
+              <BellOff className="mt-0.5 h-4 w-4 shrink-0 text-camp-bark/60" />
+              <p>Ton navigateur ne supporte pas les notifications push.</p>
+            </div>
+          )}
+
+          {permission === 'denied' && (
+            <div className="flex items-start gap-3 rounded-xl bg-camp-berry/10 p-4 text-sm text-camp-berry">
+              <BellOff className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <p className="font-semibold">Notifications bloquées par le navigateur.</p>
+                <p className="mt-1 text-camp-berry/80">
+                  Pour les réactiver, ouvre les paramètres de ton navigateur et autorise les notifications pour ce site.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {(permission === 'default' || permission === 'granted') && (
+            <>
+              <div className="flex items-center justify-between rounded-xl bg-camp-sand/40 p-4">
+                <div className="flex items-center gap-3">
+                  {subscribed ? (
+                    <BellRing className="h-5 w-5 text-camp-pine" />
+                  ) : (
+                    <BellOff className="h-5 w-5 text-camp-bark/50" />
+                  )}
+                  <div>
+                    <p className="text-sm font-semibold text-camp-pine-dark">
+                      {subscribed ? 'Activées sur cet appareil' : 'Désactivées sur cet appareil'}
+                    </p>
+                    <p className="text-xs text-camp-bark/60">
+                      {subscribed
+                        ? "Tu reçois des alertes pour les messages et les tirages."
+                        : "Tu ne reçois pas d'alertes sur cet appareil."}
+                    </p>
+                  </div>
+                </div>
+                <span className={`h-3 w-3 rounded-full ${subscribed ? 'bg-camp-pine' : 'bg-camp-bark/30'}`} />
+              </div>
+
+              {subscribed ? (
+                <button
+                  type="button"
+                  onClick={() => void unsubscribe()}
+                  disabled={busy}
+                  className="btn-ghost w-full justify-center"
+                >
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellOff className="h-4 w-4" />}
+                  Désactiver sur cet appareil
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void subscribe()}
+                  disabled={busy}
+                  className="btn-primary w-full justify-center"
+                >
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
+                  Activer les notifications
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PlayerProfilePage() {
   const auth = useContext(AuthContext);
   const user = auth?.user;
@@ -107,7 +280,6 @@ export default function PlayerProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Vie privée
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [myRequests, setMyRequests] = useState<PrivacyRequest[]>([]);
   const [privacyType, setPrivacyType] = useState<PrivacyRequestType>('access');
@@ -133,9 +305,7 @@ export default function PlayerProfilePage() {
         if (active) setLoading(false);
       }
     })();
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [user?.id]);
 
   const loadMyRequests = async () => {
@@ -163,7 +333,7 @@ export default function PlayerProfilePage() {
   };
 
   const save = async () => {
-    if (likes.length === 0) return toast.warning('Ajoute au moins un « j’aime ».');
+    if (likes.length === 0) return toast.warning("Ajoute au moins un « j'aime ».");
     if (!color.trim() || !animal.trim()) return toast.warning('Couleur et animal sont requis.');
     setSaving(true);
     try {
@@ -211,21 +381,21 @@ export default function PlayerProfilePage() {
         ) : (
           <div className="card-sign space-y-5 p-6 sm:p-8">
             <h2 className="font-display text-xl font-bold text-camp-pine-dark">Préférences cadeaux</h2>
-            <TagInput label="J’aime" icon={Heart} values={likes} onChange={setLikes} placeholder="Ex : chocolat noir, plein air…" />
-            <TagInput label="Je n’aime pas" icon={HeartCrack} values={dislikes} onChange={setDislikes} placeholder="Ex : réglisse…" />
-            <TagInput label="Allergies" icon={ShieldAlert} values={allergies} onChange={setAllergies} placeholder="Ex : arachides…" />
+            <TagInput label="J'aime" icon={Heart} values={likes} onChange={setLikes} placeholder="Ex : chocolat noir, plein air…" />
+            <TagInput label="Je n'aime pas" icon={HeartCrack} values={dislikes} onChange={setDislikes} placeholder="Ex : réglisse…" />
+            <TagInput label="Allergies" icon={ShieldAlert} values={allergies} onChange={setAllergies} placeholder="Ex : arachides…" />
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div>
                 <label className="field-label flex items-center gap-2">
                   <Palette className="h-4 w-4 text-camp-pine" /> Couleur préférée
                 </label>
-                <input value={color} onChange={(e) => setColor(e.target.value)} placeholder="Ex : Bleu pastel" className="field" />
+                <input value={color} onChange={(e) => setColor(e.target.value)} placeholder="Ex : Bleu pastel" className="field" />
               </div>
               <div>
                 <label className="field-label flex items-center gap-2">
                   <PawPrint className="h-4 w-4 text-camp-pine" /> Animal préféré
                 </label>
-                <input value={animal} onChange={(e) => setAnimal(e.target.value)} placeholder="Ex : Renard" className="field" />
+                <input value={animal} onChange={(e) => setAnimal(e.target.value)} placeholder="Ex : Renard" className="field" />
               </div>
             </div>
 
@@ -249,6 +419,9 @@ export default function PlayerProfilePage() {
             </div>
           </div>
         )}
+
+        {/* Section notifications */}
+        <NotificationSection />
 
         {/* Section vie privée */}
         <div className="card-sign mt-4">
