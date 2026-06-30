@@ -72,6 +72,28 @@ export interface AdminUserRow {
   onBoarded: boolean;
   createdAt?: string;
   lastLogin?: string;
+  likes?: string[];
+  dislikes?: string[];
+  allergies?: string[];
+  favoriteColor?: string;
+  favoriteAnimal?: string;
+  wishlist?: WishlistItem[];
+}
+
+export interface AdminNotificationStats {
+  total: number;
+  unread: number;
+}
+
+export interface AdminNotificationRow {
+  _id: string;
+  type: NotificationType;
+  title: string;
+  gameCode?: string;
+  link?: string;
+  readAt?: string;
+  createdAt: string;
+  user?: { _id: string; name: string; email?: string } | null;
 }
 
 export interface AdminNotificationStats {
