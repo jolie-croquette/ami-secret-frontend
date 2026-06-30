@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
 
 const LAST_UPDATED = '30 juin 2026';
-const CONTACT_EMAIL = 'privacy@amisecret.xyz';
+const CONTACT_EMAIL = 'no-reply@amisecret.xyz';
 const SITE_NAME = 'Ami Secret';
 const SITE_URL = 'https://amisecret.xyz';
 
