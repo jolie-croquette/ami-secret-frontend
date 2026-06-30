@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Pencil, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { giftPhotoApi, type GiftPhoto } from '@/api/giftPhoto';
@@ -121,11 +122,11 @@ export default function GiftPhotoFeed({ photos, currentUserId, canDeleteAll, gam
         })}
       </div>
 
-      {/* Modal d'édition */}
-      {editing && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+      {/* Modal d'édition — monté dans <body> via portal pour éviter tout overlap */}
+      {editing && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-camp-ink/40 backdrop-blur-sm" onClick={() => setEditing(null)} />
-          <div className="card-sign relative z-10 w-full max-w-sm p-6">
+          <div className="card-sign relative z-10 w-full max-w-sm overflow-y-auto max-h-[90dvh] p-6">
             <h2 className="mb-4 font-display text-lg font-black text-camp-pine-dark">Modifier la photo</h2>
 
             {/* Prévisualisation + remplacement */}
@@ -174,7 +175,8 @@ export default function GiftPhotoFeed({ photos, currentUserId, canDeleteAll, gam
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
