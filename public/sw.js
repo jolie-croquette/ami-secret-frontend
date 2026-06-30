@@ -1,5 +1,7 @@
-const SHELL_CACHE = 'ami-secret-shell-v1';
-const ASSETS_CACHE = 'ami-secret-assets-v1';
+// Incrémenter BUILD_ID à chaque déploiement pour invalider les caches
+const BUILD_ID = '2';
+const SHELL_CACHE = `ami-secret-shell-v${BUILD_ID}`;
+const ASSETS_CACHE = `ami-secret-assets-v${BUILD_ID}`;
 
 // ── Install : mise en cache du shell ──────────────────────────────────────────
 self.addEventListener('install', (event) => {
