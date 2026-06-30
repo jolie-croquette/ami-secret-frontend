@@ -14,6 +14,11 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
 
   componentDidCatch(error: unknown) {
     console.error('[ErrorBoundary]', error);
+    // Chunk introuvable après un déploiement (SW cache périmé) → rechargement forcé
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('Failed to fetch dynamically imported module') || msg.includes('Importing a module script failed')) {
+      window.location.reload();
+    }
   }
 
   render() {
