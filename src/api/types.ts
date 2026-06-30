@@ -96,22 +96,6 @@ export interface AdminNotificationRow {
   user?: { _id: string; name: string; email?: string } | null;
 }
 
-export interface AdminNotificationStats {
-  total: number;
-  unread: number;
-}
-
-export interface AdminNotificationRow {
-  _id: string;
-  type: NotificationType;
-  title: string;
-  gameCode?: string;
-  link?: string;
-  readAt?: string;
-  createdAt: string;
-  user?: { _id: string; name: string; email?: string } | null;
-}
-
 export interface AdminGameRow {
   _id: string;
   name: string;
