@@ -5,6 +5,7 @@ import type { AdminGameRow, GameStatus } from '@/api/types';
 import { CampLoader } from '@/components/CampLoader';
 import ConfirmModal from '@/components/ConfirmModal';
 import { toast } from 'react-toastify';
+import { giftPhotoApi, type GiftPhoto } from '@/api/giftPhoto';
 import {
   Search,
   Eye,
@@ -15,6 +16,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Pencil,
+  Images,
+  X,
+  Loader2,
 } from 'lucide-react';
 
 type StatusFilter = NonNullable<ListGamesParams['status']>;
@@ -50,6 +54,38 @@ export default function AdminGames() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const [confirm, setConfirm] = useState<{ kind: ConfirmKind; game: AdminGameRow } | null>(null);
+
+  const [photosGame, setPhotosGame] = useState<AdminGameRow | null>(null);
+  const [photos, setPhotos] = useState<GiftPhoto[]>([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const [deletingPhoto, setDeletingPhoto] = useState<string | null>(null);
+
+  const openPhotos = async (g: AdminGameRow) => {
+    setPhotosGame(g);
+    setLoadingPhotos(true);
+    try {
+      const data = await giftPhotoApi.list(g.code);
+      setPhotos(data);
+    } catch {
+      setPhotos([]);
+    } finally {
+      setLoadingPhotos(false);
+    }
+  };
+
+  const handleAdminDeletePhoto = async (photo: GiftPhoto) => {
+    if (!confirm) { /* no-op guard */ }
+    setDeletingPhoto(photo._id);
+    try {
+      await giftPhotoApi.adminDelete(photo._id);
+      setPhotos((prev) => prev.filter((p) => p._id !== photo._id));
+      toast.success('Photo supprimée.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur lors de la suppression.');
+    } finally {
+      setDeletingPhoto(null);
+    }
+  };
 
   const [edit, setEdit] = useState<AdminGameRow | null>(null);
   const [editName, setEditName] = useState('');
@@ -218,6 +254,14 @@ export default function AdminGames() {
                   </button>
                   <button
                     className="icon-btn"
+                    title="Gérer les photos"
+                    disabled={busy}
+                    onClick={() => void openPhotos(g)}
+                  >
+                    <Images className="h-4 w-4" />
+                  </button>
+                  <button
+                    className="icon-btn"
                     title="Modifier la partie"
                     disabled={busy}
                     onClick={() => openEdit(g)}
@@ -306,6 +350,61 @@ export default function AdminGames() {
         onCancel={() => setConfirm(null)}
         onConfirm={() => void runConfirm()}
       />
+
+      {/* Modal photos */}
+      {photosGame && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-camp-ink/40 backdrop-blur-sm" onClick={() => setPhotosGame(null)} />
+          <div className="card-sign relative z-10 flex w-full max-w-2xl flex-col gap-4 p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-lg font-black text-camp-pine-dark">
+                Photos — {photosGame.name}
+              </h2>
+              <button type="button" onClick={() => setPhotosGame(null)} className="text-camp-bark/50 hover:text-camp-ink">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {loadingPhotos ? (
+              <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-camp-bark/40" /></div>
+            ) : photos.length === 0 ? (
+              <p className="text-sm text-camp-bark/70">Aucune photo pour cette partie.</p>
+            ) : (
+              <div className="grid max-h-[60vh] grid-cols-2 gap-3 overflow-y-auto sm:grid-cols-3">
+                {photos.map((photo) => {
+                  const name = typeof photo.user === 'string' ? '' : photo.user.name;
+                  return (
+                    <figure key={photo._id} className="overflow-hidden rounded-xl border border-camp-bark/15 bg-white/50">
+                      <div className="relative">
+                        <img
+                          src={photo.imageUrl}
+                          alt={`Photo semaine ${photo.week}`}
+                          className="aspect-square w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void handleAdminDeletePhoto(photo)}
+                          disabled={deletingPhoto === photo._id}
+                          className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-camp-ember shadow hover:bg-white"
+                          aria-label="Supprimer"
+                        >
+                          {deletingPhoto === photo._id
+                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            : <Trash2 className="h-3.5 w-3.5" />}
+                        </button>
+                      </div>
+                      <figcaption className="p-2">
+                        <p className="text-xs font-bold text-camp-pine-dark">{name}</p>
+                        <p className="text-xs text-camp-bark/70">Semaine {photo.week}</p>
+                        {photo.caption && <p className="mt-0.5 text-xs text-camp-ink">{photo.caption}</p>}
+                      </figcaption>
+                    </figure>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Édition d'une partie */}
       <ConfirmModal
