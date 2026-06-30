@@ -1,11 +1,12 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Users, Gamepad2, Bell } from 'lucide-react';
+import { LayoutDashboard, Users, Gamepad2, Bell, ShieldCheck } from 'lucide-react';
 
 const tabs = [
   { to: '/admin', end: true, icon: LayoutDashboard, label: 'Aperçu' },
   { to: '/admin/users', end: false, icon: Users, label: 'Utilisateurs' },
   { to: '/admin/games', end: false, icon: Gamepad2, label: 'Parties' },
   { to: '/admin/notifications', end: false, icon: Bell, label: 'Notifications' },
+  { to: '/admin/privacy-requests', end: false, icon: ShieldCheck, label: 'Vie privée' },
 ];
 
 export default function AdminLayout() {

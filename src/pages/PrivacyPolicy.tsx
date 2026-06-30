@@ -143,7 +143,9 @@ export default function PrivacyPolicy() {
                 <li><strong>Retrait du consentement :</strong> retirer à tout moment votre consentement à la collecte ou à l'utilisation de vos renseignements (ex. : désactiver les notifications push depuis votre navigateur).</li>
               </ul>
               <p>
-                Pour exercer l'un de ces droits, écrivez au RPRP à l'adresse{' '}
+                Pour exercer l'un de ces droits, utilisez le{' '}
+                <a href="/profile" className="text-camp-pine underline">formulaire intégré à votre profil</a>{' '}
+                (section « Mes droits vie privée ») ou écrivez au RPRP à l'adresse{' '}
                 <a href={`mailto:${CONTACT_EMAIL}`} className="text-camp-pine underline">{CONTACT_EMAIL}</a>.
                 Nous répondrons dans un délai de 30 jours.
               </p>

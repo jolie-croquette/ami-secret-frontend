@@ -24,6 +24,7 @@ const AdminOverview = lazy(() => import('@/pages/admin/AdminOverview'));
 const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'));
 const AdminGames = lazy(() => import('@/pages/admin/AdminGames'));
 const AdminNotifications = lazy(() => import('@/pages/admin/AdminNotifications'));
+const AdminPrivacyRequests = lazy(() => import('@/pages/admin/AdminPrivacyRequests'));
 
 const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
 const TermsOfUse = lazy(() => import('@/pages/TermsOfUse'));
@@ -157,6 +158,7 @@ export const router = createBrowserRouter([
           { path: 'users', element: withSuspense(<AdminUsers />) },
           { path: 'games', element: withSuspense(<AdminGames />) },
           { path: 'notifications', element: withSuspense(<AdminNotifications />) },
+          { path: 'privacy-requests', element: withSuspense(<AdminPrivacyRequests />) },
         ],
       },
 

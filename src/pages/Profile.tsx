@@ -3,12 +3,34 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '@/context/AuthContext';
 import { motion } from 'motion/react';
 import { toast, ToastContainer } from 'react-toastify';
-import { X, Heart, HeartCrack, ShieldAlert, Palette, PawPrint, Loader2, Mail, Gift } from 'lucide-react';
+import { X, Heart, HeartCrack, ShieldAlert, Palette, PawPrint, Loader2, Mail, Gift, ShieldCheck, ChevronDown } from 'lucide-react';
 import { userApi } from '@/api/user';
 import type { WishlistItem } from '@/api/types';
 import WishlistEditor from '@/components/WishlistEditor';
 import { MeritBadge } from '@/components/visuals/CampVisuals';
+import {
+  privacyRequestApi,
+  TYPE_LABELS,
+  STATUS_LABELS,
+  type PrivacyRequestType,
+  type PrivacyRequest,
+} from '@/api/privacyRequest';
 import 'react-toastify/dist/ReactToastify.css';
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: 'bg-camp-sand text-camp-bark',
+  in_progress: 'bg-camp-sun/30 text-camp-pine-dark',
+  resolved: 'bg-camp-pine/15 text-camp-pine-dark',
+  rejected: 'bg-camp-berry/15 text-camp-berry',
+};
+
+function StatusBadge({ status }: { status: string }) {
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_COLORS[status] ?? ''}`}>
+      {STATUS_LABELS[status as keyof typeof STATUS_LABELS] ?? status}
+    </span>
+  );
+}
 
 const initials = (name = '') =>
   name.trim().split(/\s+/).filter(Boolean).map((w) => w[0]?.toUpperCase()).slice(0, 2).join('') || 'AS';
@@ -85,6 +107,13 @@ export default function PlayerProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Vie privée
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [myRequests, setMyRequests] = useState<PrivacyRequest[]>([]);
+  const [privacyType, setPrivacyType] = useState<PrivacyRequestType>('access');
+  const [privacyMessage, setPrivacyMessage] = useState('');
+  const [sendingPrivacy, setSendingPrivacy] = useState(false);
+
   useEffect(() => {
     if (!user?.id) return;
     let active = true;
@@ -108,6 +137,30 @@ export default function PlayerProfilePage() {
       active = false;
     };
   }, [user?.id]);
+
+  const loadMyRequests = async () => {
+    try {
+      const data = await privacyRequestApi.mine();
+      setMyRequests(data);
+    } catch {
+      // silencieux
+    }
+  };
+
+  const submitPrivacyRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSendingPrivacy(true);
+    try {
+      await privacyRequestApi.create({ type: privacyType, message: privacyMessage.trim() || undefined });
+      toast.success('Demande soumise. Je la traiterai dans les 30 jours.');
+      setPrivacyMessage('');
+      await loadMyRequests();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Envoi impossible.');
+    } finally {
+      setSendingPrivacy(false);
+    }
+  };
 
   const save = async () => {
     if (likes.length === 0) return toast.warning('Ajoute au moins un « j’aime ».');
@@ -196,6 +249,86 @@ export default function PlayerProfilePage() {
             </div>
           </div>
         )}
+
+        {/* Section vie privée */}
+        <div className="card-sign mt-4">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between p-6"
+            onClick={() => {
+              setPrivacyOpen((o) => !o);
+              if (!privacyOpen) void loadMyRequests();
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="h-5 w-5 text-camp-pine" />
+              <span className="font-display text-lg font-bold text-camp-pine-dark">Mes droits vie privée</span>
+            </div>
+            <ChevronDown className={`h-5 w-5 text-camp-bark transition-transform ${privacyOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {privacyOpen && (
+            <div className="space-y-5 border-t border-camp-bark/10 px-6 pb-6 pt-4">
+              <p className="text-sm text-camp-bark">
+                Conformément à la Loi 25 (LPRPSP), tu peux exercer les droits suivants. Je traite chaque demande dans un délai de 30 jours.
+              </p>
+
+              <form onSubmit={(e) => void submitPrivacyRequest(e)} className="space-y-3">
+                <div>
+                  <label className="field-label">Type de demande</label>
+                  <select
+                    className="field"
+                    value={privacyType}
+                    onChange={(e) => setPrivacyType(e.target.value as PrivacyRequestType)}
+                  >
+                    {(Object.entries(TYPE_LABELS) as [PrivacyRequestType, string][]).map(([k, v]) => (
+                      <option key={k} value={k}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="field-label">Message (optionnel)</label>
+                  <textarea
+                    className="field min-h-[80px] resize-y"
+                    placeholder="Précise ta demande si nécessaire…"
+                    value={privacyMessage}
+                    onChange={(e) => setPrivacyMessage(e.target.value)}
+                    maxLength={1000}
+                  />
+                </div>
+                <button type="submit" className="btn-primary" disabled={sendingPrivacy}>
+                  {sendingPrivacy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                  Soumettre la demande
+                </button>
+              </form>
+
+              {myRequests.length > 0 && (
+                <div>
+                  <h3 className="mb-2 text-sm font-bold text-camp-pine-dark">Mes demandes</h3>
+                  <ul className="space-y-2">
+                    {myRequests.map((r) => (
+                      <li key={r._id} className="rounded-xl border border-camp-bark/15 bg-white/60 p-3 text-sm">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold text-camp-pine-dark">{TYPE_LABELS[r.type]}</span>
+                          <StatusBadge status={r.status} />
+                        </div>
+                        {r.message && <p className="mt-1 text-camp-bark/80">{r.message}</p>}
+                        {r.adminNote && (
+                          <p className="mt-1 rounded bg-camp-sand/50 px-2 py-1 text-xs text-camp-ink">
+                            <strong>Note :</strong> {r.adminNote}
+                          </p>
+                        )}
+                        <p className="mt-1 text-xs text-camp-bark/50">
+                          {new Date(r.createdAt).toLocaleDateString('fr-CA')}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
       <ToastContainer position="top-center" autoClose={3500} theme="colored" />
     </div>
