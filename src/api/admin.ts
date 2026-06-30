@@ -85,8 +85,9 @@ export const adminApi = {
   unbanUser: (id: string) => api.patch<AdminUserRow>(`/admin/users/${id}/unban`),
   setRole: (id: string, role: UserRole) =>
     api.patch<AdminUserRow>(`/admin/users/${id}/role`, { role }),
-  updateUser: (id: string, body: { name?: string; email?: string }) =>
+  updateUser: (id: string, body: Record<string, unknown>) =>
     api.patch<AdminUserRow>(`/admin/users/${id}`, body),
+  exportUser: (id: string) => api.get<Record<string, unknown>>(`/admin/users/${id}/export`),
   deleteUser: (id: string) => api.del<{ ok: boolean }>(`/admin/users/${id}`),
   resetPassword: (id: string) =>
     api.post<{ link: string; emailSent: boolean }>(`/admin/users/${id}/reset-password`),

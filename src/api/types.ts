@@ -72,6 +72,12 @@ export interface AdminUserRow {
   onBoarded: boolean;
   createdAt?: string;
   lastLogin?: string;
+  likes?: string[];
+  dislikes?: string[];
+  allergies?: string[];
+  favoriteColor?: string;
+  favoriteAnimal?: string;
+  wishlist?: WishlistItem[];
 }
 
 export interface AdminNotificationStats {

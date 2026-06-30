@@ -4,6 +4,7 @@ import { adminApi, type ListUsersParams } from '@/api/admin';
 import type { AdminUserRow } from '@/api/types';
 import { CampLoader } from '@/components/CampLoader';
 import ConfirmModal from '@/components/ConfirmModal';
+import UserPrivacyModal from './UserPrivacyModal';
 import { toast } from 'react-toastify';
 import {
   Search,
@@ -13,6 +14,7 @@ import {
   Trash2,
   ShieldPlus,
   ShieldMinus,
+  ShieldCheck,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -67,6 +69,8 @@ export default function AdminUsers() {
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
+
+  const [privacyUser, setPrivacyUser] = useState<AdminUserRow | null>(null);
 
   const load = useCallback(
     async (opts?: { page?: number; search?: string; status?: StatusFilter }) => {
@@ -281,6 +285,16 @@ export default function AdminUsers() {
                     <Pencil className="h-4 w-4" />
                   </button>
 
+                  {/* Vie privée (Loi 25) */}
+                  <button
+                    className="icon-btn"
+                    title="Droits vie privée (Loi 25)"
+                    disabled={busy}
+                    onClick={() => setPrivacyUser(u)}
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                  </button>
+
                   {/* Rôle */}
                   {!isAdmin && (
                     <button
@@ -445,6 +459,18 @@ export default function AdminUsers() {
           </div>
         )}
       </ConfirmModal>
+
+      {/* Modal vie privée (Loi 25) */}
+      {privacyUser && (
+        <UserPrivacyModal
+          user={privacyUser}
+          onClose={() => setPrivacyUser(null)}
+          onDeleted={() => {
+            setPrivacyUser(null);
+            void load({ page: 1 });
+          }}
+        />
+      )}
 
       {/* Édition d'un utilisateur */}
       <ConfirmModal
