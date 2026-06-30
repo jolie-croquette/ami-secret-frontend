@@ -1,4 +1,5 @@
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AuthContext } from '@/context/AuthContext';
 import { toast, ToastContainer } from 'react-toastify';
@@ -22,6 +23,7 @@ import {
   ShieldMinus,
   Settings,
   ArrowRight,
+  AlertTriangle,
 } from 'lucide-react';
 import { gamesApi } from '@/api/games';
 import { messagesApi } from '@/api/messages';
@@ -83,6 +85,10 @@ export default function GameLobby({ admin }: { admin: boolean }) {
 
   const [photos, setPhotos] = useState<GiftPhoto[]>([]);
   const loadPhotos = () => giftPhotoApi.list(code).then(setPhotos).catch(() => setPhotos([]));
+
+  const RECEIVED_CONFIRM_KEY = 'ami-secret:skip-received-confirm';
+  const [receivedConfirmWeek, setReceivedConfirmWeek] = useState<number | null>(null);
+  const dontShowRef = useRef(false);
   const [photoPromptWeek, setPhotoPromptWeek] = useState<number | null>(null);
 
   // Gestion organisateur : édition des détails + gestion des joueurs.
@@ -238,17 +244,40 @@ export default function GameLobby({ admin }: { admin: boolean }) {
     }
   };
 
-  const toggleWeek = async (week: number) => {
-    const received = !weeksReceived.includes(week);
+  const doMarkReceived = async (week: number) => {
     setBusyWeek(week);
     try {
-      const res = await gamesApi.markWeek(code, week, received);
+      const res = await gamesApi.markWeek(code, week, true);
       setWeeksReceived(res.weeksReceived);
-      if (received) setPhotoPromptWeek(week);
+      setPhotoPromptWeek(week);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erreur.');
     } finally {
       setBusyWeek(null);
+    }
+  };
+
+  const toggleWeek = async (week: number) => {
+    const received = !weeksReceived.includes(week);
+    if (!received) {
+      // Décocher — pas de confirmation nécessaire
+      setBusyWeek(week);
+      try {
+        const res = await gamesApi.markWeek(code, week, false);
+        setWeeksReceived(res.weeksReceived);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Erreur.');
+      } finally {
+        setBusyWeek(null);
+      }
+      return;
+    }
+    // Cocher — afficher la popup de confirmation, sauf si l'utilisateur a choisi de ne plus la voir
+    if (localStorage.getItem(RECEIVED_CONFIRM_KEY) === '1') {
+      void doMarkReceived(week);
+    } else {
+      dontShowRef.current = false;
+      setReceivedConfirmWeek(week);
     }
   };
 
@@ -736,6 +765,57 @@ export default function GameLobby({ admin }: { admin: boolean }) {
 
       <CampScene className="pointer-events-none absolute bottom-0 left-0 h-28 w-full" />
       <ToastContainer position="top-center" autoClose={3500} theme="colored" />
+
+      {/* Popup de confirmation — cadeau reçu */}
+      {receivedConfirmWeek !== null && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-camp-ink/40 backdrop-blur-sm" onClick={() => setReceivedConfirmWeek(null)} />
+          <div className="card-sign relative z-10 w-full max-w-sm p-6">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-camp-amber/15 text-camp-amber mx-auto">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <h2 className="mb-2 text-center font-display text-lg font-black text-camp-pine-dark">
+              Tu as bien reçu ton cadeau ?
+            </h2>
+            <p className="mb-1 text-center text-sm text-camp-bark">
+              Confirme seulement si <strong>tu as reçu</strong> ton cadeau cette semaine — pas que tu en as donné un.
+            </p>
+            <p className="mb-5 text-center text-xs text-camp-bark/70">
+              ⚠️ Si tu partages une photo, fais attention à ne pas révéler l'identité de ton Ami Secret.
+            </p>
+            <label className="mb-4 flex cursor-pointer items-center gap-2 text-sm text-camp-bark select-none">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded accent-camp-pine"
+                onChange={(e) => { dontShowRef.current = e.target.checked; }}
+              />
+              Ne plus afficher ce message
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setReceivedConfirmWeek(null)}
+                className="btn-ghost flex-1"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                className="btn-primary flex-1"
+                onClick={() => {
+                  if (dontShowRef.current) localStorage.setItem(RECEIVED_CONFIRM_KEY, '1');
+                  const week = receivedConfirmWeek;
+                  setReceivedConfirmWeek(null);
+                  void doMarkReceived(week);
+                }}
+              >
+                Oui, j'ai reçu mon cadeau
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {photoPromptWeek !== null && (
         <GiftPhotoPrompt
