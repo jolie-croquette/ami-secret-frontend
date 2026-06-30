@@ -82,6 +82,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
   const [acting, setActing] = useState(false);
 
   const [photos, setPhotos] = useState<GiftPhoto[]>([]);
+  const loadPhotos = () => giftPhotoApi.list(code).then(setPhotos).catch(() => setPhotos([]));
   const [photoPromptWeek, setPhotoPromptWeek] = useState<number | null>(null);
 
   // Gestion organisateur : édition des détails + gestion des joueurs.
@@ -111,7 +112,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
       if (g.status !== 'lobby' && g.isMember) {
         gamesApi.myTarget(code).then(setTarget).catch(() => setTarget(null));
         messagesApi.inbox(code).then(setMessages).catch(() => setMessages([]));
-        giftPhotoApi.list(code).then(setPhotos).catch(() => setPhotos([]));
+        loadPhotos();
       }
       if (admin && g.isAdmin && g.status !== 'lobby') {
         gamesApi.progress(code).then(setProgress).catch(() => setProgress(null));
@@ -549,7 +550,13 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                     <h2 className="mb-3 flex items-center gap-2 font-display text-xl font-bold text-camp-pine-dark">
                       <Gift className="h-5 w-5 text-camp-berry" /> Photos de la partie
                     </h2>
-                    <GiftPhotoFeed photos={photos} />
+                    <GiftPhotoFeed
+                      photos={photos}
+                      currentUserId={me?._id}
+                      canDeleteAll={game.isAdmin || (me?.role === 'admin')}
+                      gameCode={code}
+                      onChanged={loadPhotos}
+                    />
                   </div>
                 )}
 
@@ -737,7 +744,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
           onClose={() => setPhotoPromptWeek(null)}
           onUploaded={() => {
             toast.success('Photo partagée avec la partie !');
-            giftPhotoApi.list(code).then(setPhotos).catch(() => {});
+            loadPhotos();
           }}
         />
       )}
