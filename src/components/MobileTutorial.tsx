@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   Tent,
@@ -12,14 +12,8 @@ import {
 } from 'lucide-react';
 import { AuthContext } from '@/context/AuthContext';
 import { isMobileDevice, isStandalone, isIos, canPromptInstall, promptInstall } from '@/lib/pwa';
+import { hasCompleteIdentity } from '@/lib/identity';
 import { PWA_INSTALL_INSTRUCTIONS } from '@/content/updateNote';
-
-/**
- * Clé de session : le tutoriel se réaffiche à chaque nouvelle connexion
- * (nouvel onglet / nouvelle session, ou login explicite qui efface la clé
- * via AuthContext), mais pas à chaque navigation dans la même session.
- */
-export const MOBILE_TUTORIAL_SEEN_KEY = 'ami-secret:mobile-tutorial-seen';
 
 interface Step {
   icon: typeof Tent;
@@ -62,8 +56,10 @@ const STEPS: Step[] = [
 ];
 
 /**
- * Tutoriel affiché à chaque connexion détectée sur mobile (hors app installée),
- * qui présente l’app et incite à installer la PWA. Monté dans le Layout.
+ * Tutoriel affiché à chaque entrée dans l’app sur mobile (hors app installée),
+ * qui présente l’app et incite à installer la PWA. Monté dans le Layout :
+ * il apparaît une fois par chargement de page, puis reste fermé pendant la
+ * navigation, et revient à la prochaine ouverture de l’app.
  */
 export default function MobileTutorial() {
   const auth = useContext(AuthContext);
@@ -71,19 +67,21 @@ export default function MobileTutorial() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [installing, setInstalling] = useState(false);
+  const shownThisLoad = useRef(false);
 
   useEffect(() => {
-    // Après l'onboarding seulement (pour ne pas chevaucher le wizard),
-    // sur mobile, et pas si l'app est déjà installée.
-    if (!user || !user.onBoarded) return;
+    if (shownThisLoad.current) return;
+    // Après l'onboarding seulement (pour ne pas chevaucher le wizard) et une
+    // fois l'identité complétée (pour ne pas se superposer à la modale
+    // obligatoire), sur mobile, et pas si l'app est déjà installée.
+    if (!user || !user.onBoarded || !hasCompleteIdentity(user)) return;
     if (!isMobileDevice() || isStandalone()) return;
-    if (sessionStorage.getItem(MOBILE_TUTORIAL_SEEN_KEY)) return;
+    shownThisLoad.current = true;
     setStep(0);
     setOpen(true);
   }, [user]);
 
   const close = () => {
-    sessionStorage.setItem(MOBILE_TUTORIAL_SEEN_KEY, '1');
     setOpen(false);
   };
 

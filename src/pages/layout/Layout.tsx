@@ -4,6 +4,7 @@ import { Outlet } from 'react-router-dom'
 import UpdateNoteModal from '@/components/UpdateNoteModal'
 import EnableNotificationsPrompt from '@/components/EnableNotificationsPrompt'
 import MobileTutorial from '@/components/MobileTutorial'
+import CompleteProfileModal from '@/components/CompleteProfileModal'
 
 export default function Layout() {
   return (
@@ -16,6 +17,7 @@ export default function Layout() {
       <UpdateNoteModal />
       <EnableNotificationsPrompt />
       <MobileTutorial />
+      <CompleteProfileModal />
     </>
   )
 }
