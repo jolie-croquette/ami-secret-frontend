@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '@/context/AuthContext';
 import { motion } from 'motion/react';
 import { toast, ToastContainer } from 'react-toastify';
-import { X, Heart, HeartCrack, ShieldAlert, Palette, PawPrint, Loader2, Mail, Gift, ShieldCheck, ChevronDown, Bell, BellOff, BellRing } from 'lucide-react';
+import { X, Heart, HeartCrack, ShieldAlert, Palette, PawPrint, Loader2, Mail, Gift, ShieldCheck, ChevronDown, Bell, BellOff, BellRing, UserRound, Tent } from 'lucide-react';
 import { userApi } from '@/api/user';
 import type { WishlistItem } from '@/api/types';
 import WishlistEditor from '@/components/WishlistEditor';
@@ -271,6 +271,11 @@ export default function PlayerProfilePage() {
   const user = auth?.user;
   const navigate = useNavigate();
 
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [campName, setCampName] = useState('');
+  const [savingIdentity, setSavingIdentity] = useState(false);
+
   const [likes, setLikes] = useState<string[]>([]);
   const [dislikes, setDislikes] = useState<string[]>([]);
   const [allergies, setAllergies] = useState<string[]>([]);
@@ -285,6 +290,14 @@ export default function PlayerProfilePage() {
   const [privacyType, setPrivacyType] = useState<PrivacyRequestType>('access');
   const [privacyMessage, setPrivacyMessage] = useState('');
   const [sendingPrivacy, setSendingPrivacy] = useState(false);
+
+  useEffect(() => {
+    // Repli sur le nom complet pour les comptes créés avant l'ajout des champs.
+    const parts = (user?.name ?? '').trim().split(/\s+/);
+    setFirstName(user?.firstName ?? parts[0] ?? '');
+    setLastName(user?.lastName ?? parts.slice(1).join(' '));
+    setCampName(user?.campName ?? '');
+  }, [user?.firstName, user?.lastName, user?.campName, user?.name]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -332,6 +345,25 @@ export default function PlayerProfilePage() {
     }
   };
 
+  const saveIdentity = async () => {
+    if (!firstName.trim()) return toast.warning('Le prénom est requis.');
+    if (!lastName.trim()) return toast.warning('Le nom est requis.');
+    setSavingIdentity(true);
+    try {
+      await userApi.updateProfile({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        campName: campName.trim() || undefined,
+      });
+      await auth?.refresh();
+      toast.success('Identité mise à jour.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur de sauvegarde.');
+    } finally {
+      setSavingIdentity(false);
+    }
+  };
+
   const save = async () => {
     if (likes.length === 0) return toast.warning("Ajoute au moins un « j'aime ».");
     if (!color.trim() || !animal.trim()) return toast.warning('Couleur et animal sont requis.');
@@ -373,6 +405,51 @@ export default function PlayerProfilePage() {
             </p>
           </div>
         </motion.div>
+
+        <div className="card-sign mb-6 space-y-5 p-6 sm:p-8">
+          <h2 className="font-display text-xl font-bold text-camp-pine-dark">Mon identité</h2>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
+              <label className="field-label flex items-center gap-2">
+                <UserRound className="h-4 w-4 text-camp-pine" /> Prénom
+              </label>
+              <input
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Ton prénom"
+                className="field"
+              />
+            </div>
+            <div>
+              <label className="field-label flex items-center gap-2">
+                <UserRound className="h-4 w-4 text-camp-pine" /> Nom
+              </label>
+              <input
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Ton nom"
+                className="field"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="field-label flex items-center gap-2">
+              <Tent className="h-4 w-4 text-camp-pine" /> Nom de camp (optionnel)
+            </label>
+            <input
+              value={campName}
+              onChange={(e) => setCampName(e.target.value)}
+              placeholder="Ex : Castor"
+              className="field"
+            />
+            <p className="mt-1 text-xs text-camp-bark">
+              S’il est renseigné, c’est lui qui est affiché dans les parties — sinon, ton prénom.
+            </p>
+          </div>
+          <button onClick={() => void saveIdentity()} disabled={savingIdentity} className="btn-primary">
+            {savingIdentity ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Enregistrer mon identité'}
+          </button>
+        </div>
 
         {loading ? (
           <div className="flex justify-center py-16">

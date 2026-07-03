@@ -1,9 +1,17 @@
 import { api } from './client';
 import type { AuthUser } from './types';
 
+export interface SignupPayload {
+  firstName: string;
+  lastName: string;
+  campName?: string;
+  email: string;
+  password: string;
+}
+
 export const authApi = {
-  signup: async (name: string, email: string, password: string): Promise<void> => {
-    await api.post<{ ok: boolean }>('/auth/signup', { name, email, password });
+  signup: async (payload: SignupPayload): Promise<void> => {
+    await api.post<{ ok: boolean }>('/auth/signup', payload);
   },
 
   login: async (email: string, password: string): Promise<void> => {
