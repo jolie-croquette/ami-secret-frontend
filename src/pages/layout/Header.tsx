@@ -2,8 +2,10 @@ import { useContext, useRef, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
-import { TreePine, UserRound, LayoutGrid, LogIn, Plus, LogOut, ChevronDown, ShieldCheck } from 'lucide-react';
+import { TreePine, UserRound, LayoutGrid, LogIn, Plus, LogOut, ChevronDown, ShieldCheck, CircleHelp } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
+import { OPEN_TUTORIAL_EVENT } from '@/components/MobileTutorial';
+import { isMobileDevice } from '@/lib/pwa';
 
 function capitalizeWords(s?: string) {
   if (!s) return '';
@@ -71,6 +73,17 @@ export default function Header() {
 
         {auth?.user && (
           <div className="flex items-center gap-2">
+            {isMobileDevice() && (
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new Event(OPEN_TUTORIAL_EVENT))}
+                aria-label="Aide — revoir le tutoriel"
+                title="Aide"
+                className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-camp-bark/15 bg-white/60 text-camp-pine transition hover:border-camp-pine/40"
+              >
+                <CircleHelp className="h-5 w-5" />
+              </button>
+            )}
             <NotificationBell />
             <div className="relative" ref={dropdownRef}>
             <button
