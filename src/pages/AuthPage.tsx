@@ -3,14 +3,15 @@ import { AuthContext } from '@/context/AuthContext';
 import { AnimatePresence, motion } from 'motion/react';
 import { toast, ToastContainer } from 'react-toastify';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Loader2 } from 'lucide-react';
+import { Mail, Lock, User, Loader2, Tent } from 'lucide-react';
 import { ApiError } from '@/api/client';
 import { Pennants, MeritBadge, PineTree, CampScene } from '@/components/visuals/CampVisuals';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const emptyForm = { firstName: '', lastName: '', campName: '', email: '', password: '' };
+  const [form, setForm] = useState(emptyForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const auth = useContext(AuthContext);
@@ -19,25 +20,32 @@ export default function AuthPage() {
   const switchMode = (login: boolean) => {
     if (isSubmitting || login === isLogin) return;
     setIsLogin(login);
-    setForm({ name: '', email: '', password: '' });
+    setForm(emptyForm);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth) return toast.error('Erreur interne : contexte d’authentification indisponible');
 
-    const { name, email, password } = form;
+    const { firstName, lastName, campName, email, password } = form;
     if (!email || !password) return toast.warning('Courriel et mot de passe sont requis.');
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
     if (!emailRegex.test(email)) return toast.warning('Adresse courriel invalide.');
-    if (!isLogin && !name.trim()) return toast.warning('Le nom est requis.');
+    if (!isLogin && !firstName.trim()) return toast.warning('Le prénom est requis.');
+    if (!isLogin && !lastName.trim()) return toast.warning('Le nom est requis.');
     if (password.length < 6) return toast.warning('Mot de passe trop court (min. 6 caractères).');
 
     setIsSubmitting(true);
     try {
       if (!isLogin) {
-        await auth.signup(name, email, password);
+        await auth.signup({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          campName: campName.trim() || undefined,
+          email,
+          password,
+        });
         toast.success('Compte créé.');
         navigate('/onboard', { replace: true });
       } else {
@@ -114,26 +122,65 @@ export default function AuthPage() {
           <AnimatePresence initial={false}>
             {!isLogin && (
               <motion.div
-                key="name"
+                key="identity"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.25, ease: 'easeInOut' }}
-                className="overflow-hidden"
+                className="space-y-4 overflow-hidden"
               >
-                <label htmlFor="name" className="field-label">Nom</label>
-                <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-camp-bark/45" />
-                  <input
-                    id="name"
-                    type="text"
-                    autoComplete="name"
-                    className="field pl-11"
-                    placeholder="Ton prénom"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    disabled={isSubmitting}
-                  />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="firstName" className="field-label">Prénom</label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-camp-bark/45" />
+                      <input
+                        id="firstName"
+                        type="text"
+                        autoComplete="given-name"
+                        className="field pl-11"
+                        placeholder="Ton prénom"
+                        value={form.firstName}
+                        onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="lastName" className="field-label">Nom</label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-camp-bark/45" />
+                      <input
+                        id="lastName"
+                        type="text"
+                        autoComplete="family-name"
+                        className="field pl-11"
+                        placeholder="Ton nom"
+                        value={form.lastName}
+                        onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="campName" className="field-label">Nom de camp (optionnel)</label>
+                  <div className="relative">
+                    <Tent className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-camp-bark/45" />
+                    <input
+                      id="campName"
+                      type="text"
+                      autoComplete="nickname"
+                      className="field pl-11"
+                      placeholder="Ex : Castor"
+                      value={form.campName}
+                      onChange={(e) => setForm({ ...form, campName: e.target.value })}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-camp-bark/70">
+                    S’il est renseigné, c’est lui qui sera affiché dans les parties.
+                  </p>
                 </div>
               </motion.div>
             )}

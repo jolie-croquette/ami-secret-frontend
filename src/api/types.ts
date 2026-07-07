@@ -14,6 +14,12 @@ export interface WishlistItem {
 export interface AuthUser {
   _id: string;
   name: string;
+  /** Prénom. */
+  firstName?: string;
+  /** Nom de famille. */
+  lastName?: string;
+  /** Nom de camp (surnom) — affiché dans les parties s'il est présent. */
+  campName?: string;
   email: string;
   role?: UserRole;
   isBanned?: boolean;
