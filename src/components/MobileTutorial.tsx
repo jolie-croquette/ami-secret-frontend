@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   Tent,
@@ -14,6 +14,12 @@ import { AuthContext } from '@/context/AuthContext';
 import { isMobileDevice, isStandalone, isIos, canPromptInstall, promptInstall } from '@/lib/pwa';
 import { hasCompleteIdentity } from '@/lib/identity';
 import { PWA_INSTALL_INSTRUCTIONS } from '@/content/updateNote';
+
+/** Le tutoriel ne s'affiche automatiquement qu'une seule fois par appareil. */
+const TUTORIAL_DONE_KEY = 'ami-secret:mobile-tutorial-done';
+
+/** Événement global pour rouvrir le tutoriel (bouton « Aide » du header). */
+export const OPEN_TUTORIAL_EVENT = 'ami-secret:open-tutorial';
 
 interface Step {
   icon: typeof Tent;
@@ -56,10 +62,10 @@ const STEPS: Step[] = [
 ];
 
 /**
- * Tutoriel affiché à chaque entrée dans l’app sur mobile (hors app installée),
- * qui présente l’app et incite à installer la PWA. Monté dans le Layout :
- * il apparaît une fois par chargement de page, puis reste fermé pendant la
- * navigation, et revient à la prochaine ouverture de l’app.
+ * Tutoriel de découverte de l’app, affiché automatiquement à la première
+ * visite sur mobile (hors app installée), puis reconsultable à tout moment
+ * via le bouton « Aide » du header (événement OPEN_TUTORIAL_EVENT).
+ * Monté dans le Layout.
  */
 export default function MobileTutorial() {
   const auth = useContext(AuthContext);
@@ -67,21 +73,31 @@ export default function MobileTutorial() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [installing, setInstalling] = useState(false);
-  const shownThisLoad = useRef(false);
 
+  // Dans l'app installée, l'étape « Installe l'app » n'a plus de raison d'être.
+  const steps = isStandalone() ? STEPS.slice(0, STEPS.length - 1) : STEPS;
+
+  // Première visite : affichage automatique, une seule fois par appareil.
   useEffect(() => {
-    if (shownThisLoad.current) return;
-    // Après l'onboarding seulement (pour ne pas chevaucher le wizard) et une
-    // fois l'identité complétée (pour ne pas se superposer à la modale
-    // obligatoire), sur mobile, et pas si l'app est déjà installée.
     if (!user || !user.onBoarded || !hasCompleteIdentity(user)) return;
     if (!isMobileDevice() || isStandalone()) return;
-    shownThisLoad.current = true;
+    if (localStorage.getItem(TUTORIAL_DONE_KEY)) return;
     setStep(0);
     setOpen(true);
   }, [user]);
 
+  // Réouverture manuelle via le bouton « Aide ».
+  useEffect(() => {
+    const reopen = () => {
+      setStep(0);
+      setOpen(true);
+    };
+    window.addEventListener(OPEN_TUTORIAL_EVENT, reopen);
+    return () => window.removeEventListener(OPEN_TUTORIAL_EVENT, reopen);
+  }, []);
+
   const close = () => {
+    localStorage.setItem(TUTORIAL_DONE_KEY, '1');
     setOpen(false);
   };
 
@@ -97,9 +113,10 @@ export default function MobileTutorial() {
 
   if (!open) return null;
 
-  const isLast = step === STEPS.length - 1;
-  const current = STEPS[step];
+  const isLast = step === steps.length - 1;
+  const current = steps[step];
   const Icon = current.icon;
+  const showInstall = !isStandalone() && isLast;
 
   return (
     <AnimatePresence>
@@ -131,7 +148,7 @@ export default function MobileTutorial() {
 
           {/* Points d'étape */}
           <div className="mb-5 flex justify-center gap-2">
-            {STEPS.map((_, i) => (
+            {steps.map((_, i) => (
               <span
                 key={i}
                 className={`h-2 rounded-full transition-all ${
@@ -155,7 +172,7 @@ export default function MobileTutorial() {
               </p>
             ))}
 
-            {isLast &&
+            {showInstall &&
               (canPromptInstall() ? (
                 <button
                   type="button"
