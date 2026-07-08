@@ -70,6 +70,9 @@ export interface AdminStats {
 export interface AdminUserRow {
   _id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
+  campName?: string;
   email: string;
   role: UserRole;
   isBanned: boolean;

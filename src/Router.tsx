@@ -22,6 +22,7 @@ const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
 const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'));
 const AdminOverview = lazy(() => import('@/pages/admin/AdminOverview'));
 const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'));
+const AdminUserDetail = lazy(() => import('@/pages/admin/AdminUserDetail'));
 const AdminGames = lazy(() => import('@/pages/admin/AdminGames'));
 const AdminNotifications = lazy(() => import('@/pages/admin/AdminNotifications'));
 const AdminPrivacyRequests = lazy(() => import('@/pages/admin/AdminPrivacyRequests'));
@@ -167,6 +168,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: withSuspense(<AdminOverview />) },
           { path: 'users', element: withSuspense(<AdminUsers />) },
+          { path: 'users/:id', element: withSuspense(<AdminUserDetail />) },
           { path: 'games', element: withSuspense(<AdminGames />) },
           { path: 'notifications', element: withSuspense(<AdminNotifications />) },
           { path: 'privacy-requests', element: withSuspense(<AdminPrivacyRequests />) },
