@@ -176,8 +176,16 @@ export interface InboxMessage {
   _id: string;
   body: string;
   createdAt: string;
-  /** true = message envoyé par moi (« Moi »), false = reçu (« Ami secret »). */
+  /** true = message envoyé par moi, false = reçu (toujours anonyme). */
   mine: boolean;
+}
+
+/** Les deux fils anonymes d'un membre dans une partie. */
+export interface InboxThreads {
+  /** Conversation avec la personne que je gâte. */
+  target: InboxMessage[];
+  /** Conversation avec la personne qui me gâte. */
+  gifter: InboxMessage[];
 }
 
 export interface ProgressMember {
