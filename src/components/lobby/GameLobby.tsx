@@ -63,11 +63,11 @@ function Chips({ items, tone }: { items?: string[]; tone: string }) {
 }
 
 /**
- * Messagerie anonyme temporairement désactivée (purge des anciens messages à
- * faire en base). Le backend renvoie aussi 503 tant que CHAT_ENABLED n'est pas
- * activé — repasser ce flag à false ici une fois la purge faite.
+ * Coupe-circuit de la messagerie anonyme : passer à true pour afficher l'avis
+ * « temporairement indisponible » à la place des fils (le backend a son propre
+ * flag CHAT_ENABLED qui répond 503 côté API).
  */
-const CHAT_TEMPORARILY_DISABLED = true;
+const CHAT_TEMPORARILY_DISABLED = false;
 
 export default function GameLobby({ admin }: { admin: boolean }) {
   const { code = '' } = useParams();
