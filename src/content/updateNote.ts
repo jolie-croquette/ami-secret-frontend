@@ -13,15 +13,14 @@ export interface UpdateNote {
 }
 
 export const UPDATE_NOTE: UpdateNote = {
-  version: '2026-06-29b',
-  date: '29 juin 2026',
+  version: '2026-07-08',
+  date: '8 juillet 2026',
   title: 'Quoi de neuf',
   items: [
-    'Nouvelle icône : le cadeau a été redessiné pour être plus propre, visible dans l’onglet du navigateur et sur ton écran d’accueil.',
-    'Notifications push : tu peux maintenant recevoir une alerte directement sur ton téléphone ou ton ordinateur quand tu reçois un message ou que le tirage est fait — accepte simplement la demande qui s’affiche en bas de l’écran.',
-    'Sécurité : la connexion fonctionne maintenant correctement sur tous les téléphones (le bogue qui bloquait certains iPhone est réglé), et les échanges entre le site et le serveur sont mieux protégés contre les abus.',
-    'Installation sur ton téléphone : tu peux ajouter Ami Secret à ton écran d’accueil pour l’ouvrir comme une vraie application — voir « Comment l’installer » ci-dessous.',
-    'Espace administrateur : section « Notifications » pour suivre les notifications envoyées aux participants.',
+    'Prénom, nom et nom de camp : ton profil se précise ! Si tu renseignes ton nom de camp, c’est lui qui s’affiche dans les parties (sinon, ton prénom). Une petite fenêtre te demandera de compléter ces infos — une seule fois, promis.',
+    'Messagerie repensée : deux conversations anonymes bien séparées — « J’offre à… » pour envoyer des indices à la personne que tu gâtes, et « Je reçois de… » pour répondre à la personne qui t’offre des cadeaux, sans jamais savoir qui c’est.',
+    'Tutoriel de bienvenue sur mobile : un petit guide de l’app s’affiche à ta première visite, et tu peux le revoir quand tu veux avec le bouton « ? » en haut de l’écran.',
+    'Installation sur ton téléphone : l’app te propose maintenant de s’ajouter à ton écran d’accueil pour l’ouvrir comme une vraie application — voir « Comment l’installer » ci-dessous.',
   ],
 };
 
