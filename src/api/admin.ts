@@ -48,11 +48,58 @@ export interface AdminUserGame {
   status: GameStatus;
   numberOfWeeks: number;
   memberCount: number;
+  isGameAdmin?: boolean;
+  joinedAt?: string;
+  weeksReceived?: number[];
+  createdAt?: string;
 }
 
+export interface AdminUserNotification {
+  _id: string;
+  type: string;
+  title: string;
+  gameCode?: string;
+  link?: string;
+  readAt?: string;
+  createdAt: string;
+}
+
+export interface AdminUserPhoto {
+  _id: string;
+  game?: { _id: string; name: string; code: string } | null;
+  week: number;
+  imageUrl: string;
+  caption?: string;
+  createdAt: string;
+}
+
+export interface AdminUserPrivacyRequest {
+  _id: string;
+  type: string;
+  status: string;
+  message?: string;
+  adminNote?: string;
+  resolvedAt?: string;
+  createdAt: string;
+}
+
+export interface AdminUserCounts {
+  games: number;
+  notifications: number;
+  photos: number;
+  messagesSent: number;
+  messagesReceived: number;
+  pushSubscriptions: number;
+}
+
+/** Dossier complet d'un utilisateur (GET /admin/users/:id). */
 export interface AdminUserDetail {
   user: AdminUserRow;
   games: AdminUserGame[];
+  notifications: { items: AdminUserNotification[]; total: number };
+  photos: AdminUserPhoto[];
+  privacyRequests: AdminUserPrivacyRequest[];
+  counts: AdminUserCounts;
 }
 
 /** Détail brut d'une partie côté admin (membres + admins peuplés). */

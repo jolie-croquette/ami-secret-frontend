@@ -1,4 +1,5 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AuthContext } from '@/context/AuthContext';
 import { adminApi, type ListUsersParams } from '@/api/admin';
 import type { AdminUserRow } from '@/api/types';
@@ -21,6 +22,7 @@ import {
   Crown,
   CircleCheck,
   Pencil,
+  Eye,
 } from 'lucide-react';
 
 const fmtDate = (iso?: string): string =>
@@ -257,9 +259,13 @@ export default function AdminUsers() {
               <li key={u._id} className="card-sign flex flex-wrap items-center gap-3 p-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-display text-lg font-bold text-camp-pine-dark">
+                    <Link
+                      to={`/admin/users/${u._id}`}
+                      className="font-display text-lg font-bold text-camp-pine-dark hover:underline"
+                      title="Consulter la fiche complète"
+                    >
                       {u.name}
-                    </span>
+                    </Link>
                     <RoleBadge user={u} />
                     {!u.onBoarded && (
                       <span className="badge-merit bg-camp-sand/70 text-camp-bark">Profil incomplet</span>
@@ -275,6 +281,11 @@ export default function AdminUsers() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5">
+                  {/* Fiche complète */}
+                  <Link to={`/admin/users/${u._id}`} className="icon-btn" title="Consulter la fiche complète">
+                    <Eye className="h-4 w-4" />
+                  </Link>
+
                   {/* Édition */}
                   <button
                     className="icon-btn"
