@@ -62,6 +62,13 @@ function Chips({ items, tone }: { items?: string[]; tone: string }) {
   );
 }
 
+/**
+ * Messagerie anonyme temporairement désactivée (purge des anciens messages à
+ * faire en base). Le backend renvoie aussi 503 tant que CHAT_ENABLED n'est pas
+ * activé — repasser ce flag à false ici une fois la purge faite.
+ */
+const CHAT_TEMPORARILY_DISABLED = true;
+
 export default function GameLobby({ admin }: { admin: boolean }) {
   const { code = '' } = useParams();
   const navigate = useNavigate();
@@ -119,7 +126,9 @@ export default function GameLobby({ admin }: { admin: boolean }) {
 
       if (g.status !== 'lobby' && g.isMember) {
         gamesApi.myTarget(code).then(setTarget).catch(() => setTarget(null));
-        messagesApi.inbox(code).then(setThreads).catch(() => setThreads({ target: [], gifter: [] }));
+        if (!CHAT_TEMPORARILY_DISABLED) {
+          messagesApi.inbox(code).then(setThreads).catch(() => setThreads({ target: [], gifter: [] }));
+        }
         loadPhotos();
       }
       if (admin && g.isAdmin && g.status !== 'lobby') {
@@ -591,8 +600,26 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                   </div>
                 )}
 
-                {/* Messages anonymes — deux fils : ma cible et la personne qui me gâte */}
-                {game.isMember && (
+                {/* Messages anonymes — deux fils : ma personne à gâter et mon bienfaiteur secret */}
+                {game.isMember && CHAT_TEMPORARILY_DISABLED && (
+                  <div className="card-sign p-6">
+                    <h2 className="mb-3 flex items-center gap-2 font-display text-xl font-bold text-camp-pine-dark">
+                      <Inbox className="h-5 w-5 text-camp-lake" /> Messages anonymes
+                    </h2>
+                    <div className="flex items-start gap-3 rounded-2xl border-2 border-camp-sun/40 bg-camp-sun/10 p-4">
+                      <span className="text-xl" aria-hidden>🚧</span>
+                      <div>
+                        <p className="text-sm font-bold text-camp-pine-dark">
+                          Messagerie temporairement indisponible
+                        </p>
+                        <p className="mt-0.5 text-sm text-camp-bark">
+                          On fait un peu de ménage dans le courrier du camp. Les messages anonymes reviennent très bientôt !
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {game.isMember && !CHAT_TEMPORARILY_DISABLED && (
                   <div className="card-sign p-6">
                     <h2 className="mb-3 flex items-center gap-2 font-display text-xl font-bold text-camp-pine-dark">
                       <Inbox className="h-5 w-5 text-camp-lake" /> Messages anonymes
@@ -601,8 +628,8 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                     <div className="mb-3 grid grid-cols-2 gap-1 rounded-full bg-camp-sand/80 p-1">
                       {(
                         [
-                          { tab: 'target', label: 'Je gâte…' },
-                          { tab: 'gifter', label: 'On me gâte…' },
+                          { tab: 'target', label: 'Ma personne à gâter' },
+                          { tab: 'gifter', label: 'Mon bienfaiteur secret' },
                         ] as { tab: MessageRecipient; label: string }[]
                       ).map(({ tab, label }) => (
                         <button
@@ -622,16 +649,16 @@ export default function GameLobby({ admin }: { admin: boolean }) {
 
                     <p className="mb-4 text-xs text-camp-bark/70">
                       {chatTab === 'target'
-                        ? 'Conversation anonyme avec la personne que TU gâtes.'
-                        : 'Conversation anonyme avec la personne qui TE gâte — tu peux lui répondre sans savoir qui c’est.'}
+                        ? 'Conversation anonyme avec ta personne à gâter.'
+                        : 'Conversation anonyme avec ton bienfaiteur secret — tu peux lui répondre sans savoir qui c’est.'}
                     </p>
 
                     <div className="mb-4 space-y-3">
                       {threads[chatTab].length === 0 ? (
                         <p className="text-sm text-camp-bark/70">
                           {chatTab === 'target'
-                            ? 'Aucun message pour l’instant. Envoie un indice à la personne que tu gâtes !'
-                            : 'Aucun message pour l’instant. Remercie ou questionne la personne qui te gâte !'}
+                            ? 'Aucun message pour l’instant. Envoie un indice à ta personne à gâter !'
+                            : 'Aucun message pour l’instant. Remercie ou questionne ton bienfaiteur secret !'}
                         </p>
                       ) : (
                         threads[chatTab].map((m) => (
@@ -643,8 +670,8 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                               {m.mine
                                 ? 'Moi'
                                 : chatTab === 'target'
-                                  ? 'La personne que je gâte'
-                                  : 'La personne qui me gâte'}
+                                  ? 'Ma personne à gâter'
+                                  : 'Mon bienfaiteur secret'}
                             </span>
                             <div
                               className={`max-w-[85%] rounded-2xl border-2 p-3 ${
@@ -674,8 +701,8 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                         maxLength={500}
                         placeholder={
                           chatTab === 'target'
-                            ? 'Un indice pour la personne que tu gâtes…'
-                            : 'Un mot pour la personne qui te gâte…'
+                            ? 'Un indice pour ta personne à gâter…'
+                            : 'Un mot pour ton bienfaiteur secret…'
                         }
                         className="field flex-1"
                       />
