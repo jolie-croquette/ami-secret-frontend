@@ -26,14 +26,14 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { gamesApi } from '@/api/games';
-import { messagesApi } from '@/api/messages';
+import { messagesApi, type MessageRecipient } from '@/api/messages';
 import { giftPhotoApi, type GiftPhoto } from '@/api/giftPhoto';
 import { ApiError } from '@/api/client';
 import type {
   GameDetails,
   GameStatus,
   TargetPreferences,
-  InboxMessage,
+  InboxThreads,
   GameProgress,
 } from '@/api/types';
 import { MeritBadge, Tent, Campfire, CampScene } from '@/components/visuals/CampVisuals';
@@ -76,7 +76,9 @@ export default function GameLobby({ admin }: { admin: boolean }) {
   const [weeksReceived, setWeeksReceived] = useState<number[]>([]);
   const [busyWeek, setBusyWeek] = useState<number | null>(null);
 
-  const [messages, setMessages] = useState<InboxMessage[]>([]);
+  const emptyThreads: InboxThreads = { target: [], gifter: [] };
+  const [threads, setThreads] = useState<InboxThreads>(emptyThreads);
+  const [chatTab, setChatTab] = useState<MessageRecipient>('target');
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
 
@@ -117,7 +119,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
 
       if (g.status !== 'lobby' && g.isMember) {
         gamesApi.myTarget(code).then(setTarget).catch(() => setTarget(null));
-        messagesApi.inbox(code).then(setMessages).catch(() => setMessages([]));
+        messagesApi.inbox(code).then(setThreads).catch(() => setThreads({ target: [], gifter: [] }));
         loadPhotos();
       }
       if (admin && g.isAdmin && g.status !== 'lobby') {
@@ -287,10 +289,10 @@ export default function GameLobby({ admin }: { admin: boolean }) {
     if (!body) return;
     setSending(true);
     try {
-      await messagesApi.send(code, body);
+      await messagesApi.send(code, body, chatTab);
       setDraft('');
       const updated = await messagesApi.inbox(code).catch(() => null);
-      if (updated) setMessages(updated);
+      if (updated) setThreads(updated);
       toast.success('Message envoyé.');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Envoi impossible.');
@@ -589,26 +591,60 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                   </div>
                 )}
 
-                {/* Messages anonymes */}
+                {/* Messages anonymes — deux fils : ma cible et la personne qui me gâte */}
                 {game.isMember && (
                   <div className="card-sign p-6">
                     <h2 className="mb-3 flex items-center gap-2 font-display text-xl font-bold text-camp-pine-dark">
                       <Inbox className="h-5 w-5 text-camp-lake" /> Messages anonymes
                     </h2>
 
+                    <div className="mb-3 grid grid-cols-2 gap-1 rounded-full bg-camp-sand/80 p-1">
+                      {(
+                        [
+                          { tab: 'target', label: 'Je gâte…' },
+                          { tab: 'gifter', label: 'On me gâte…' },
+                        ] as { tab: MessageRecipient; label: string }[]
+                      ).map(({ tab, label }) => (
+                        <button
+                          key={tab}
+                          type="button"
+                          onClick={() => setChatTab(tab)}
+                          className={`rounded-full py-1.5 text-sm font-extrabold transition ${
+                            chatTab === tab
+                              ? 'bg-camp-pine text-camp-cream shadow-sign-sm'
+                              : 'text-camp-pine'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <p className="mb-4 text-xs text-camp-bark/70">
+                      {chatTab === 'target'
+                        ? 'Conversation anonyme avec la personne que TU gâtes.'
+                        : 'Conversation anonyme avec la personne qui TE gâte — tu peux lui répondre sans savoir qui c’est.'}
+                    </p>
+
                     <div className="mb-4 space-y-3">
-                      {messages.length === 0 ? (
+                      {threads[chatTab].length === 0 ? (
                         <p className="text-sm text-camp-bark/70">
-                          Aucun message pour l’instant. Envoie un indice à ton ami secret&nbsp;!
+                          {chatTab === 'target'
+                            ? 'Aucun message pour l’instant. Envoie un indice à la personne que tu gâtes !'
+                            : 'Aucun message pour l’instant. Remercie ou questionne la personne qui te gâte !'}
                         </p>
                       ) : (
-                        messages.map((m) => (
+                        threads[chatTab].map((m) => (
                           <div
                             key={m._id}
                             className={`flex flex-col ${m.mine ? 'items-end' : 'items-start'}`}
                           >
                             <span className="mb-1 px-1 text-xs font-bold text-camp-bark/70">
-                              {m.mine ? 'Moi' : 'Ami secret'}
+                              {m.mine
+                                ? 'Moi'
+                                : chatTab === 'target'
+                                  ? 'La personne que je gâte'
+                                  : 'La personne qui me gâte'}
                             </span>
                             <div
                               className={`max-w-[85%] rounded-2xl border-2 p-3 ${
@@ -636,7 +672,11 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                         value={draft}
                         onChange={(e) => setDraft(e.target.value)}
                         maxLength={500}
-                        placeholder="Un indice pour ton ami secret…"
+                        placeholder={
+                          chatTab === 'target'
+                            ? 'Un indice pour la personne que tu gâtes…'
+                            : 'Un mot pour la personne qui te gâte…'
+                        }
                         className="field flex-1"
                       />
                       <button type="submit" disabled={sending} className="btn-primary !px-4">
