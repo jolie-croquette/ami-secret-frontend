@@ -628,8 +628,8 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                     <div className="mb-3 grid grid-cols-2 gap-1 rounded-full bg-camp-sand/80 p-1">
                       {(
                         [
-                          { tab: 'target', label: 'Ma personne à gâter' },
-                          { tab: 'gifter', label: 'Mon bienfaiteur secret' },
+                          { tab: 'target', label: 'J’offre à…' },
+                          { tab: 'gifter', label: 'Je reçois de…' },
                         ] as { tab: MessageRecipient; label: string }[]
                       ).map(({ tab, label }) => (
                         <button
@@ -649,16 +649,16 @@ export default function GameLobby({ admin }: { admin: boolean }) {
 
                     <p className="mb-4 text-xs text-camp-bark/70">
                       {chatTab === 'target'
-                        ? 'Conversation anonyme avec ta personne à gâter.'
-                        : 'Conversation anonyme avec ton bienfaiteur secret — tu peux lui répondre sans savoir qui c’est.'}
+                        ? 'Conversation anonyme avec la personne à qui TU offres des cadeaux.'
+                        : 'Conversation anonyme avec la personne qui T’offre des cadeaux — réponds-lui sans savoir qui c’est.'}
                     </p>
 
                     <div className="mb-4 space-y-3">
                       {threads[chatTab].length === 0 ? (
                         <p className="text-sm text-camp-bark/70">
                           {chatTab === 'target'
-                            ? 'Aucun message pour l’instant. Envoie un indice à ta personne à gâter !'
-                            : 'Aucun message pour l’instant. Remercie ou questionne ton bienfaiteur secret !'}
+                            ? 'Aucun message pour l’instant. Envoie un indice à la personne à qui tu offres !'
+                            : 'Aucun message pour l’instant. Remercie la personne qui t’offre des cadeaux !'}
                         </p>
                       ) : (
                         threads[chatTab].map((m) => (
@@ -670,8 +670,8 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                               {m.mine
                                 ? 'Moi'
                                 : chatTab === 'target'
-                                  ? 'Ma personne à gâter'
-                                  : 'Mon bienfaiteur secret'}
+                                  ? 'La personne à qui j’offre'
+                                  : 'La personne qui m’offre'}
                             </span>
                             <div
                               className={`max-w-[85%] rounded-2xl border-2 p-3 ${
@@ -701,8 +701,8 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                         maxLength={500}
                         placeholder={
                           chatTab === 'target'
-                            ? 'Un indice pour ta personne à gâter…'
-                            : 'Un mot pour ton bienfaiteur secret…'
+                            ? 'Un indice pour la personne à qui tu offres…'
+                            : 'Un mot pour la personne qui t’offre des cadeaux…'
                         }
                         className="field flex-1"
                       />
