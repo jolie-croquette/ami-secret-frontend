@@ -17,10 +17,10 @@ export const UPDATE_NOTE: UpdateNote = {
   date: '8 juillet 2026',
   title: 'Quoi de neuf',
   items: [
-    'Prénom, nom et nom de camp : ton profil se précise ! Si tu renseignes ton nom de camp, c’est lui qui s’affiche dans les parties (sinon, ton prénom). Une petite fenêtre te demandera de compléter ces infos — une seule fois, promis.',
-    'Messagerie repensée : deux conversations anonymes bien séparées — « J’offre à… » pour envoyer des indices à la personne que tu gâtes, et « Je reçois de… » pour répondre à la personne qui t’offre des cadeaux, sans jamais savoir qui c’est.',
+    'Prénom, nom et nom de camp : ton profil se précise ! Si tu renseignes ton nom de camp, c’est lui qui s’affiche dans les parties (sinon, ton prénom). Une petite fenêtre te demandera de compléter ces infos, une seule fois.',
+    'Messagerie repensée : deux conversations anonymes bien séparées : « J’offre à… » pour envoyer des indices à la personne que tu gâtes, et « Je reçois de… » pour répondre à la personne qui t’offre des cadeaux, sans jamais savoir qui c’est.',
     'Tutoriel de bienvenue sur mobile : un petit guide de l’app s’affiche à ta première visite, et tu peux le revoir quand tu veux avec le bouton « ? » en haut de l’écran.',
-    'Installation sur ton téléphone : l’app te propose maintenant de s’ajouter à ton écran d’accueil pour l’ouvrir comme une vraie application — voir « Comment l’installer » ci-dessous.',
+    'Installation sur ton téléphone : l’app te propose maintenant de s’ajouter à ton écran d’accueil pour l’ouvrir comme une vraie application (voir « Comment l’installer » ci-dessous).',
   ],
 };
 
@@ -34,12 +34,12 @@ export const PWA_INSTALL_INSTRUCTIONS = {
     'Ouvre amisecret.xyz dans Safari.',
     'Touche l’icône de partage (carré avec une flèche vers le haut).',
     'Choisis « Sur l’écran d’accueil ».',
-    'Touche « Ajouter » — l’icône Ami Secret apparaît sur ton écran d’accueil.',
+    'Touche « Ajouter » : l’icône Ami Secret apparaît sur ton écran d’accueil.',
   ],
   android: [
     'Ouvre amisecret.xyz dans Chrome.',
     'Touche le menu (⋮) en haut à droite.',
     'Choisis « Ajouter à l’écran d’accueil » (ou « Installer l’application »).',
-    'Confirme — l’icône Ami Secret apparaît sur ton écran d’accueil.',
+    'Confirme : l’icône Ami Secret apparaît sur ton écran d’accueil.',
   ],
 };

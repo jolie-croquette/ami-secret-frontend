@@ -14,24 +14,29 @@ import {
   KeyRound,
   ArrowRight,
   Users,
+  House,
+  Briefcase,
+  GraduationCap,
+  Tent,
+  Trophy,
 } from 'lucide-react';
 import { AuthContext } from '@/context/AuthContext';
 import { Pennants, PineTree, CampScene, MeritBadge } from '@/components/visuals/CampVisuals';
 
 const AUDIENCES = [
-  { emoji: '👯', label: 'Entre amis' },
-  { emoji: '👨‍👩‍👧‍👦', label: 'En famille' },
-  { emoji: '💼', label: 'Au bureau' },
-  { emoji: '🎓', label: 'À l’école' },
-  { emoji: '⛺', label: 'Au camp' },
-  { emoji: '🏒', label: 'Dans ton équipe' },
+  { icon: Users, label: 'Entre amis' },
+  { icon: House, label: 'En famille' },
+  { icon: Briefcase, label: 'Au bureau' },
+  { icon: GraduationCap, label: 'À l’école' },
+  { icon: Tent, label: 'Au camp' },
+  { icon: Trophy, label: 'Dans ton équipe' },
 ];
 
 const FEATURES = [
   {
     icon: Shuffle,
     title: 'Tirage secret et équitable',
-    text: 'Un clic et chaque participant reçoit une personne à gâter — personne ne pige son propre nom, et personne ne peut tricher.',
+    text: 'Un clic et chaque participant reçoit une personne à gâter : personne ne pige son propre nom, et personne ne peut tricher.',
   },
   {
     icon: ListChecks,
@@ -41,7 +46,7 @@ const FEATURES = [
   {
     icon: MessageSquareHeart,
     title: 'Messages anonymes',
-    text: 'Envoie des indices à la personne que tu gâtes et réponds à celle qui te gâte — sans jamais dévoiler qui tu es.',
+    text: 'Envoie des indices à la personne que tu gâtes et réponds à celle qui te gâte, sans jamais dévoiler qui tu es.',
   },
   {
     icon: Camera,
@@ -51,7 +56,7 @@ const FEATURES = [
   {
     icon: BellRing,
     title: 'Notifications et rappels',
-    text: 'Alertes de tirage, messages reçus et rappels avant chaque échange — directement sur ton téléphone.',
+    text: 'Alertes de tirage, messages reçus et rappels avant chaque échange, directement sur ton téléphone.',
   },
   {
     icon: Smartphone,
@@ -74,7 +79,7 @@ const STEPS = [
   {
     icon: Shuffle,
     title: 'Lance le tirage',
-    text: 'Chaque personne découvre qui elle gâte — et ça reste secret jusqu’à la grande révélation.',
+    text: 'Chaque personne découvre qui elle gâte, et ça reste secret jusqu’à la grande révélation.',
   },
   {
     icon: Gift,
@@ -84,10 +89,10 @@ const STEPS = [
 ];
 
 const SCREENSHOTS = [
-  { src: '/screenshots/app-dashboard.png', alt: 'Tableau de bord — tes parties en cours', caption: 'Toutes tes parties au même endroit' },
-  { src: '/screenshots/app-lobby.png', alt: 'Partie — la personne que tu gâtes et ses préférences', caption: 'Découvre qui tu gâtes et ses goûts' },
+  { src: '/screenshots/app-dashboard.png', alt: 'Tableau de bord : tes parties en cours', caption: 'Toutes tes parties au même endroit' },
+  { src: '/screenshots/app-lobby.png', alt: 'Partie : la personne que tu gâtes et ses préférences', caption: 'Découvre qui tu gâtes et ses goûts' },
   { src: '/screenshots/app-chat.png', alt: 'Messages anonymes entre participants', caption: 'Jase anonymement avec ton ami secret' },
-  { src: '/screenshots/app-profil.png', alt: 'Profil — identité et préférences cadeaux', caption: 'Ton profil et ta liste de souhaits' },
+  { src: '/screenshots/app-profil.png', alt: 'Profil : identité et préférences cadeaux', caption: 'Ton profil et ta liste de souhaits' },
 ];
 
 function PhoneFrame({ src, alt }: { src: string; alt: string }) {
@@ -145,12 +150,12 @@ export default function LandingPage() {
           </div>
 
           <ul className="mt-8 flex flex-wrap justify-center gap-2">
-            {AUDIENCES.map(({ emoji, label }) => (
+            {AUDIENCES.map(({ icon: Icon, label }) => (
               <li
                 key={label}
-                className="rounded-full border-2 border-camp-bark/15 bg-white/60 px-3.5 py-1.5 text-sm font-bold text-camp-pine-dark"
+                className="inline-flex items-center gap-1.5 rounded-full border-2 border-camp-bark/15 bg-white/60 px-3.5 py-1.5 text-sm font-bold text-camp-pine-dark"
               >
-                <span aria-hidden className="mr-1.5">{emoji}</span>
+                <Icon aria-hidden className="h-4 w-4 text-camp-pine" />
                 {label}
               </li>
             ))}

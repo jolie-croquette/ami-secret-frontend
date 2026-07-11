@@ -47,7 +47,7 @@ import {
 const fmtDate = (iso?: string): string =>
   iso
     ? new Date(iso).toLocaleString('fr-CA', { dateStyle: 'medium', timeStyle: 'short' })
-    : '—';
+    : '-';
 
 const GAME_STATUS_LABELS: Record<string, string> = {
   lobby: 'En lobby',
@@ -367,7 +367,7 @@ export default function AdminUserDetail() {
       await navigator.clipboard.writeText(resetInfo.link);
       toast.success('Lien copié.');
     } catch {
-      toast.info('Copie impossible — sélectionnez le lien manuellement.');
+      toast.info('Copie impossible : sélectionnez le lien manuellement.');
     }
   };
 
@@ -711,7 +711,7 @@ export default function AdminUserDetail() {
               <CircleCheck className="h-4 w-4" /> Un courriel a été envoyé à l’utilisateur.
             </span>
           ) : (
-            'Le courriel n’a pas pu être envoyé (SMTP non configuré). Transmettez ce lien à l’utilisateur — il expire dans 1 heure.'
+            'Le courriel n’a pas pu être envoyé (SMTP non configuré). Transmettez ce lien à l’utilisateur : il expire dans 1 heure.'
           )
         }
       >

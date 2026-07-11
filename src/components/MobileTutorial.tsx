@@ -40,7 +40,7 @@ const STEPS: Step[] = [
     icon: Gift,
     title: 'Ton ami secret',
     body: [
-      'Après le tirage, découvre à qui tu offres des cadeaux — chut, c’est secret !',
+      'Après le tirage, découvre à qui tu offres des cadeaux. Chut, c’est secret !',
       'Remplis tes préférences (j’aime, allergies, liste de souhaits) pour aider ton propre ami secret.',
     ],
   },
