@@ -7,7 +7,7 @@ export default function RequireAuth({ children }: { children: React.ReactElement
   const location = useLocation();
 
   if (!auth?.user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   // Tant que le profil de préférences n'est pas complété, on force le wizard.

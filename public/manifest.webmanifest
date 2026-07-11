@@ -1,7 +1,7 @@
 {
-  "name": "Ami Secret — Camp d'été",
+  "name": "Ami Secret — Échange de cadeaux anonyme",
   "short_name": "Ami Secret",
-  "description": "Organisez votre échange de cadeaux entre amis, façon camp d'été.",
+  "description": "Organise ton échange de cadeaux anonyme : tirage secret, listes de souhaits, messages anonymes, photos et rappels — entre amis, en famille, au bureau ou à l'école.",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",

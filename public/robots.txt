@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /lobby/
+Disallow: /profile
+Disallow: /onboard
+
+Sitemap: https://amisecret.xyz/sitemap.xml

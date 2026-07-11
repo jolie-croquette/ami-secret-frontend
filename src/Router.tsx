@@ -11,6 +11,7 @@ import PlayerLobby from './pages/PlayerLobby';
 import PlayerProfilePage from './pages/Profile';
 
 // Lazy load
+const LandingPage = lazy(() => import('@/pages/LandingPage'));
 const AuthPage = lazy(() => import('@/pages/AuthPage'));
 const PreferencesPage = lazy(() => import('@/pages/PreferencesPage'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
@@ -50,15 +51,21 @@ export const router = createBrowserRouter([
     // Un SEUL Layout pour toute l'app
     element: <Layout />,
     children: [
-      // accueil (login)
-      { 
-        index: true, 
-        path: '/', 
+      // page d'accueil publique (promotion de l'app)
+      {
+        index: true,
+        path: '/',
+        element: withSuspense(<LandingPage />),
+      },
+
+      // connexion / inscription
+      {
+        path: '/login',
         element: withSuspense(
           <RequireNoAuth>
             <AuthPage />
           </RequireNoAuth>
-        ) 
+        )
       },
 
       {

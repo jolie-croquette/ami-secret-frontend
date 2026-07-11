@@ -2,14 +2,16 @@ import { useState, useContext } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 import { AnimatePresence, motion } from 'motion/react';
 import { toast, ToastContainer } from 'react-toastify';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, User, Loader2, Tent } from 'lucide-react';
 import { ApiError } from '@/api/client';
 import { Pennants, MeritBadge, PineTree, CampScene } from '@/components/visuals/CampVisuals';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function AuthPage() {
-  const [isLogin, setIsLogin] = useState(true);
+  // `/login?mode=signup` ouvre directement l'onglet Inscription (CTA de l'accueil).
+  const [searchParams] = useSearchParams();
+  const [isLogin, setIsLogin] = useState(searchParams.get('mode') !== 'signup');
   const emptyForm = { firstName: '', lastName: '', campName: '', email: '', password: '' };
   const [form, setForm] = useState(emptyForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
