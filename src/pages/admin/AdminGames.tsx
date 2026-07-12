@@ -19,10 +19,11 @@ import {
   Images,
   X,
   Loader2,
+  RotateCcw,
 } from 'lucide-react';
 
 type StatusFilter = NonNullable<ListGamesParams['status']>;
-type ConfirmKind = 'draw' | 'reveal' | 'delete';
+type ConfirmKind = 'draw' | 'reveal' | 'delete' | 'hard-delete';
 
 const LIMIT = 20;
 
@@ -152,6 +153,19 @@ export default function AdminGames() {
     }
   };
 
+  const restore = async (g: AdminGameRow) => {
+    setBusyId(g._id);
+    try {
+      await adminApi.restoreGame(g._id);
+      toast.success('Partie restaurée.');
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Restauration impossible.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const runConfirm = async () => {
     if (!confirm) return;
     const { kind, game } = confirm;
@@ -163,9 +177,12 @@ export default function AdminGames() {
       } else if (kind === 'reveal') {
         await adminApi.forceReveal(game._id);
         toast.success('Amis secrets révélés.');
+      } else if (kind === 'hard-delete') {
+        await adminApi.hardDeleteGame(game._id);
+        toast.success('Partie supprimée définitivement.');
       } else {
         await adminApi.deleteGame(game._id);
-        toast.success('Partie supprimée.');
+        toast.success('Partie déplacée dans la corbeille.');
       }
       setConfirm(null);
       await load();
@@ -207,6 +224,7 @@ export default function AdminGames() {
           <option value="lobby">En attente</option>
           <option value="drawn">Tirées</option>
           <option value="revealed">Révélées</option>
+          <option value="deleted">Corbeille</option>
         </select>
         <button type="submit" className="btn-primary">
           Rechercher
@@ -230,6 +248,9 @@ export default function AdminGames() {
                       {g.name}
                     </span>
                     <StatusBadge status={g.status} />
+                    {g.deletedAt && (
+                      <span className="badge-merit bg-camp-berry/15 text-camp-berry">Supprimée</span>
+                    )}
                     <span className="rounded-full bg-camp-sand/60 px-2 py-0.5 font-mono text-xs font-bold text-camp-bark">
                       {g.code}
                     </span>
@@ -244,6 +265,27 @@ export default function AdminGames() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5">
+                  {g.deletedAt ? (
+                    <>
+                      <button
+                        className="icon-btn"
+                        title="Restaurer la partie"
+                        disabled={busy}
+                        onClick={() => void restore(g)}
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                      </button>
+                      <button
+                        className="icon-btn icon-btn-danger"
+                        title="Supprimer définitivement (irréversible)"
+                        disabled={busy}
+                        onClick={() => setConfirm({ kind: 'hard-delete', game: g })}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </>
+                  ) : (
+                  <>
                   <button
                     className="icon-btn"
                     title="Ouvrir la partie (vue organisateur)"
@@ -290,12 +332,14 @@ export default function AdminGames() {
                   )}
                   <button
                     className="icon-btn icon-btn-danger"
-                    title="Supprimer la partie"
+                    title="Supprimer la partie (corbeille, restaurable)"
                     disabled={busy}
                     onClick={() => setConfirm({ kind: 'delete', game: g })}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
+                  </>
+                  )}
                 </div>
               </li>
             );
@@ -328,23 +372,33 @@ export default function AdminGames() {
       {/* Confirmation */}
       <ConfirmModal
         open={!!confirm}
-        tone={confirm?.kind === 'delete' ? 'danger' : 'default'}
+        tone={confirm?.kind === 'delete' || confirm?.kind === 'hard-delete' ? 'danger' : 'default'}
         title={
           confirm?.kind === 'draw'
             ? 'Forcer le tirage ?'
             : confirm?.kind === 'reveal'
               ? 'Forcer la révélation ?'
-              : `Supprimer « ${confirm?.game.name} » ?`
+              : confirm?.kind === 'hard-delete'
+                ? `Supprimer définitivement « ${confirm?.game.name} » ?`
+                : `Supprimer « ${confirm?.game.name} » ?`
         }
         message={
           confirm?.kind === 'draw'
             ? 'Chaque participant se verra attribuer un ami secret. La partie passera au statut « Tirée ».'
             : confirm?.kind === 'reveal'
               ? 'Tous les amis secrets seront dévoilés aux participants.'
-              : 'Suppression définitive de la partie et de ses messages. Action irréversible.'
+              : confirm?.kind === 'hard-delete'
+                ? 'Suppression définitive de la partie, de ses messages et de ses photos. Action irréversible.'
+                : 'La partie sera déplacée dans la corbeille et disparaîtra pour tous les participants. Elle restera restaurable depuis le filtre « Corbeille ».'
         }
         confirmLabel={
-          confirm?.kind === 'draw' ? 'Tirer' : confirm?.kind === 'reveal' ? 'Révéler' : 'Supprimer'
+          confirm?.kind === 'draw'
+            ? 'Tirer'
+            : confirm?.kind === 'reveal'
+              ? 'Révéler'
+              : confirm?.kind === 'hard-delete'
+                ? 'Supprimer définitivement'
+                : 'Supprimer'
         }
         loading={!!busyId}
         onCancel={() => setConfirm(null)}
@@ -358,7 +412,7 @@ export default function AdminGames() {
           <div className="card-sign relative z-10 flex w-full max-w-2xl flex-col gap-4 p-6">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-lg font-black text-camp-pine-dark">
-                Photos — {photosGame.name}
+                Photos : {photosGame.name}
               </h2>
               <button type="button" onClick={() => setPhotosGame(null)} className="text-camp-bark/50 hover:text-camp-ink">
                 <X className="h-5 w-5" />

@@ -43,6 +43,9 @@ export const gamesApi = {
 
   leave: (gameId: string) => api.post<{ _id: string; code: string }>(`/game/${gameId}/leave`),
 
+  /** Suppression douce par un organisateur : la partie disparaît mais reste restaurable par l'administration. */
+  deleteGame: (gameId: string) => api.del<{ _id: string; code: string }>(`/game/${gameId}`),
+
   draw: (code: string, startDate?: string) =>
     api.post<{ status: string; startDate: string }>(`/game/${code}/draw`, { startDate }),
 

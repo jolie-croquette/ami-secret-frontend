@@ -28,7 +28,7 @@ export interface ListUsersParams {
 
 export interface ListGamesParams {
   search?: string;
-  status?: 'all' | GameStatus;
+  status?: 'all' | GameStatus | 'deleted';
   page?: number;
   limit?: number;
 }
@@ -148,7 +148,11 @@ export const adminApi = {
   ) => api.patch<AdminGameRow>(`/admin/games/${id}`, body),
   removeGameMember: (gameId: string, userId: string) =>
     api.del<{ ok: boolean }>(`/admin/games/${gameId}/members/${userId}`),
+  /** Suppression douce : la partie va dans la corbeille (restaurable). */
   deleteGame: (id: string) => api.del<{ ok: boolean }>(`/admin/games/${id}`),
+  restoreGame: (id: string) => api.patch<{ ok: boolean }>(`/admin/games/${id}/restore`),
+  /** Suppression définitive : messages et photos inclus. Irréversible. */
+  hardDeleteGame: (id: string) => api.del<{ ok: boolean }>(`/admin/games/${id}/hard`),
   forceDraw: (id: string) => api.post<{ status: string }>(`/admin/games/${id}/force-draw`),
   forceReveal: (id: string) => api.post<{ status: string }>(`/admin/games/${id}/force-reveal`),
 
