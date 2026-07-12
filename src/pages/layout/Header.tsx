@@ -71,6 +71,15 @@ export default function Header() {
           </span>
         </Link>
 
+        {!auth?.user && (
+          <Link
+            to="/login"
+            className="rounded-full border-2 border-camp-pine/30 bg-white/60 px-4 py-1.5 text-sm font-extrabold text-camp-pine transition hover:border-camp-pine"
+          >
+            Se connecter
+          </Link>
+        )}
+
         {auth?.user && (
           <div className="flex items-center gap-2">
             {isMobileDevice() && (

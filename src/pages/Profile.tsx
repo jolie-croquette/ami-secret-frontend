@@ -443,7 +443,7 @@ export default function PlayerProfilePage() {
               className="field"
             />
             <p className="mt-1 text-xs text-camp-bark">
-              S’il est renseigné, c’est lui qui est affiché dans les parties — sinon, ton prénom.
+              S’il est renseigné, c’est lui qui est affiché dans les parties. Sinon, ton prénom.
             </p>
           </div>
           <button onClick={() => void saveIdentity()} disabled={savingIdentity} className="btn-primary">

@@ -153,7 +153,7 @@ export default function PreferencesPage() {
   const handleSubmit = async () => {
     if (!auth?.user) {
       toast.error('Non authentifié.');
-      return navigate('/');
+      return navigate('/login');
     }
     const L = clean(likes);
     if (L.length === 0) {

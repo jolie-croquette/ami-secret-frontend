@@ -44,7 +44,7 @@ export default function ForgotPassword() {
               Si un compte existe pour cette adresse, un lien de réinitialisation vient d’être envoyé.
               Le lien expire dans 1 heure.
             </p>
-            <Link to="/" className="btn-primary mt-6 inline-flex">
+            <Link to="/login" className="btn-primary mt-6 inline-flex">
               Retour à la connexion
             </Link>
           </div>
@@ -78,7 +78,7 @@ export default function ForgotPassword() {
               </button>
             </form>
             <Link
-              to="/"
+              to="/login"
               className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-camp-pine hover:underline"
             >
               <ArrowLeft className="h-4 w-4" /> Retour à la connexion

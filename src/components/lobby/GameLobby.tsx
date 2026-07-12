@@ -607,7 +607,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                       <Inbox className="h-5 w-5 text-camp-lake" /> Messages anonymes
                     </h2>
                     <div className="flex items-start gap-3 rounded-2xl border-2 border-camp-sun/40 bg-camp-sun/10 p-4">
-                      <span className="text-xl" aria-hidden>🚧</span>
+                      <AlertTriangle aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-camp-sun" />
                       <div>
                         <p className="text-sm font-bold text-camp-pine-dark">
                           Messagerie temporairement indisponible
@@ -650,7 +650,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                     <p className="mb-4 text-xs text-camp-bark/70">
                       {chatTab === 'target'
                         ? 'Conversation anonyme avec la personne à qui TU offres des cadeaux.'
-                        : 'Conversation anonyme avec la personne qui T’offre des cadeaux — réponds-lui sans savoir qui c’est.'}
+                        : 'Conversation anonyme avec la personne qui T’offre des cadeaux. Réponds-lui sans savoir qui c’est.'}
                     </p>
 
                     <div className="mb-4 space-y-3">
@@ -845,10 +845,11 @@ export default function GameLobby({ admin }: { admin: boolean }) {
               Tu as bien reçu ton cadeau ?
             </h2>
             <p className="mb-1 text-center text-sm text-camp-bark">
-              Confirme seulement si <strong>tu as reçu</strong> ton cadeau cette semaine — pas que tu en as donné un.
+              Confirme seulement si <strong>tu as reçu</strong> ton cadeau cette semaine, pas que tu en as donné un.
             </p>
-            <p className="mb-5 text-center text-xs text-camp-bark/70">
-              ⚠️ Si tu partages une photo, fais attention à ne pas révéler l'identité de ton Ami Secret.
+            <p className="mb-5 flex items-start justify-center gap-1.5 text-center text-xs text-camp-bark/70">
+              <AlertTriangle aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-camp-sun" />
+              Si tu partages une photo, fais attention à ne pas révéler l'identité de ton Ami Secret.
             </p>
             <label className="mb-4 flex cursor-pointer items-center gap-2 text-sm text-camp-bark select-none">
               <input

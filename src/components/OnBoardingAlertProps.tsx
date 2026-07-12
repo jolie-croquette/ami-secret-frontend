@@ -10,7 +10,7 @@ type OnboardingAlertProps = {
 };
 
 export default function OnboardingAlert({
-  title = "Complète tes préférences 🎯",
+  title = "Complète tes préférences",
   message = "Tu n’as pas encore inscrit tes préférences (couleur, animal, allergies, likes & dislikes). Cela aide ton ami(e) secret à te choisir des cadeaux pertinents.",
   ctaLabel = "Compléter maintenant",
   className = ""

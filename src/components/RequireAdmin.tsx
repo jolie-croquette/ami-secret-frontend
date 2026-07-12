@@ -6,7 +6,7 @@ import { Navigate } from 'react-router-dom';
 export default function RequireAdmin({ children }: { children: React.ReactElement }) {
   const auth = useContext(AuthContext);
 
-  if (!auth?.user) return <Navigate to="/" replace />;
+  if (!auth?.user) return <Navigate to="/login" replace />;
   if (auth.user.role !== 'admin') return <Navigate to="/dashboard" replace />;
 
   return children;
