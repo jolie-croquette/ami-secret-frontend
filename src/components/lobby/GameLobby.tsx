@@ -24,6 +24,7 @@ import {
   Settings,
   ArrowRight,
   AlertTriangle,
+  Trash2,
 } from 'lucide-react';
 import { gamesApi } from '@/api/games';
 import { messagesApi, type MessageRecipient } from '@/api/messages';
@@ -310,6 +311,21 @@ export default function GameLobby({ admin }: { admin: boolean }) {
     }
   };
 
+  const [deleting, setDeleting] = useState(false);
+  const deleteGame = async () => {
+    if (!game) return;
+    if (!window.confirm(`Supprimer la partie « ${game.name} » ? Elle disparaîtra pour tous les participants.`)) return;
+    setDeleting(true);
+    try {
+      await gamesApi.deleteGame(game._id);
+      toast.success('Partie supprimée.');
+      navigate('/dashboard');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Suppression impossible.');
+      setDeleting(false);
+    }
+  };
+
   const leave = async () => {
     if (!game) return;
     if (!window.confirm('Quitter cette partie ?')) return;
@@ -451,6 +467,20 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                     {savingDetails ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
                     Enregistrer
                   </button>
+
+                  <div className="mt-2 border-t border-camp-bark/10 pt-4">
+                    <button
+                      onClick={() => void deleteGame()}
+                      disabled={deleting}
+                      className="btn-ghost !border-camp-berry/40 !text-camp-berry"
+                    >
+                      {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                      Supprimer la partie
+                    </button>
+                    <p className="mt-1.5 text-xs text-camp-bark/70">
+                      La partie disparaît pour tous les participants. En cas d'erreur, l'administration du site peut la restaurer.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

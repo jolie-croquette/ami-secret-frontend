@@ -115,6 +115,8 @@ export interface AdminGameRow {
   startDate?: string;
   createdAt?: string;
   createdBy?: { _id: string; name: string; email?: string } | null;
+  /** Date de suppression douce (partie dans la corbeille, restaurable). */
+  deletedAt?: string | null;
   memberCount: number;
   adminCount: number;
 }
