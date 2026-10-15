@@ -1,8 +1,10 @@
 import type { GameProgress } from '@/api/types';
 import { Gift, Users } from 'lucide-react';
+import { Trans, useTranslation } from 'react-i18next';
 
 /** Anneau de complétion (donut SVG) — part reçue sur le total attendu. */
 function CompletionRing({ pct }: { pct: number }) {
+  const { t } = useTranslation('lobby');
   const size = 132;
   const stroke = 14;
   const r = (size - stroke) / 2;
@@ -39,7 +41,7 @@ function CompletionRing({ pct }: { pct: number }) {
         <span className="font-display text-3xl font-black leading-none text-camp-pine-dark">
           {Math.round(clamped)}%
         </span>
-        <span className="mt-0.5 text-xs font-semibold text-camp-bark">reçus</span>
+        <span className="mt-0.5 text-xs font-semibold text-camp-bark">{t('progress.received')}</span>
       </div>
     </div>
   );
@@ -71,6 +73,7 @@ function MemberBar({ name, received, total }: { name: string; received: number; 
 
 /** Visualisation de la progression des cadeaux reçus pour l'organisateur. */
 export default function ProgressViz({ progress }: { progress: GameProgress }) {
+  const { t } = useTranslation('lobby');
   const { numberOfWeeks, members } = progress;
   const expected = members.length * numberOfWeeks;
   const received = members.reduce((sum, m) => sum + m.receivedCount, 0);
@@ -85,15 +88,24 @@ export default function ProgressViz({ progress }: { progress: GameProgress }) {
           <div className="flex items-center gap-2 text-sm text-camp-bark">
             <Gift className="h-4 w-4 text-camp-pine" />
             <span>
-              <strong className="text-camp-pine-dark">{received}</strong> cadeaux reçus sur{' '}
-              <strong className="text-camp-pine-dark">{expected}</strong> attendus
+              <Trans
+                t={t}
+                i18nKey="progress.giftsSummary"
+                values={{ received, expected }}
+                components={{ strong: <strong className="text-camp-pine-dark" /> }}
+              />
             </span>
           </div>
           <div className="flex items-center gap-2 text-sm text-camp-bark">
             <Users className="h-4 w-4 text-camp-pine" />
             <span>
-              <strong className="text-camp-pine-dark">{fullyServed}</strong>/{members.length}{' '}
-              participant{members.length > 1 ? 's' : ''} au complet
+              <Trans
+                t={t}
+                i18nKey="progress.complete"
+                count={members.length}
+                values={{ done: fullyServed }}
+                components={{ strong: <strong className="text-camp-pine-dark" /> }}
+              />
             </span>
           </div>
         </div>
@@ -109,7 +121,7 @@ export default function ProgressViz({ progress }: { progress: GameProgress }) {
           />
         ))}
         {members.length === 0 && (
-          <p className="text-sm text-camp-bark">Aucun participant.</p>
+          <p className="text-sm text-camp-bark">{t('progress.empty')}</p>
         )}
       </div>
     </div>

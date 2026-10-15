@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Pencil, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import { giftPhotoApi, type GiftPhoto } from '@/api/giftPhoto';
 
 interface Props {
@@ -16,6 +17,7 @@ interface Props {
 
 /** Fil des photos de réception de cadeau partagées par les membres de la partie. */
 export default function GiftPhotoFeed({ photos, currentUserId, canDeleteAll, gameCode, onChanged }: Props) {
+  const { t } = useTranslation('lobby', { keyPrefix: 'photoFeed' });
   const [busy, setBusy] = useState<string | null>(null);
   const [editing, setEditing] = useState<GiftPhoto | null>(null);
   const [editCaption, setEditCaption] = useState('');
@@ -29,13 +31,13 @@ export default function GiftPhotoFeed({ photos, currentUserId, canDeleteAll, gam
   };
 
   const handleDelete = async (photo: GiftPhoto) => {
-    if (!confirm('Supprimer cette photo ?')) return;
+    if (!confirm(t('deleteConfirm'))) return;
     setBusy(photo._id);
     try {
       await giftPhotoApi.delete(gameCode, photo._id);
       onChanged();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur lors de la suppression.');
+      toast.error(err instanceof Error ? err.message : t('deleteError'));
     } finally {
       setBusy(null);
     }
@@ -52,7 +54,7 @@ export default function GiftPhotoFeed({ photos, currentUserId, canDeleteAll, gam
       setEditing(null);
       onChanged();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur lors de la mise à jour.');
+      toast.error(err instanceof Error ? err.message : t('updateError'));
     } finally {
       setBusy(null);
     }
@@ -61,7 +63,7 @@ export default function GiftPhotoFeed({ photos, currentUserId, canDeleteAll, gam
   if (photos.length === 0) {
     return (
       <p className="text-sm text-camp-bark/70">
-        Aucune photo partagée pour l'instant. Marque un cadeau comme reçu pour proposer la tienne&nbsp;!
+        {t('empty')}
       </p>
     );
   }
@@ -82,7 +84,7 @@ export default function GiftPhotoFeed({ photos, currentUserId, canDeleteAll, gam
               <div className="relative">
                 <img
                   src={photo.imageUrl}
-                  alt={`Cadeau reçu par ${name}, semaine ${photo.week}`}
+                  alt={t('alt', { name, week: photo.week })}
                   className="aspect-square w-full object-cover"
                 />
                 {(showDelete || showEdit) && (
@@ -93,7 +95,7 @@ export default function GiftPhotoFeed({ photos, currentUserId, canDeleteAll, gam
                         onClick={() => openEdit(photo)}
                         disabled={isBusy}
                         className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-camp-ink shadow hover:bg-white"
-                        aria-label="Modifier la photo"
+                        aria-label={t('edit')}
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
@@ -104,7 +106,7 @@ export default function GiftPhotoFeed({ photos, currentUserId, canDeleteAll, gam
                         onClick={() => handleDelete(photo)}
                         disabled={isBusy}
                         className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-camp-ember shadow hover:bg-white"
-                        aria-label="Supprimer la photo"
+                        aria-label={t('delete')}
                       >
                         {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                       </button>
@@ -114,7 +116,7 @@ export default function GiftPhotoFeed({ photos, currentUserId, canDeleteAll, gam
               </div>
               <figcaption className="p-2.5">
                 <p className="text-xs font-bold text-camp-pine-dark">{name}</p>
-                <p className="text-xs text-camp-bark/70">Semaine {photo.week}</p>
+                <p className="text-xs text-camp-bark/70">{t('week', { week: photo.week })}</p>
                 {photo.caption && <p className="mt-1 text-xs text-camp-ink">{photo.caption}</p>}
               </figcaption>
             </figure>
@@ -127,13 +129,13 @@ export default function GiftPhotoFeed({ photos, currentUserId, canDeleteAll, gam
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-camp-ink/40 backdrop-blur-sm" onClick={() => setEditing(null)} />
           <div className="card-sign relative z-10 w-full max-w-sm overflow-y-auto max-h-[90dvh] p-6">
-            <h2 className="mb-4 font-display text-lg font-black text-camp-pine-dark">Modifier la photo</h2>
+            <h2 className="mb-4 font-display text-lg font-black text-camp-pine-dark">{t('edit')}</h2>
 
             {/* Prévisualisation + remplacement */}
             <div className="mb-4 overflow-hidden rounded-xl">
               <img
                 src={pendingFile ? URL.createObjectURL(pendingFile) : editing.imageUrl}
-                alt="Aperçu"
+                alt={t('preview')}
                 className="aspect-square w-full object-cover"
               />
             </div>
@@ -149,29 +151,29 @@ export default function GiftPhotoFeed({ photos, currentUserId, canDeleteAll, gam
               onClick={() => fileRef.current?.click()}
               className="btn-ghost mb-4 w-full !py-2 text-sm"
             >
-              Remplacer l'image
+              {t('replace')}
             </button>
 
             {/* Légende */}
-            <label className="mb-1 block text-sm font-semibold text-camp-ink">Légende</label>
+            <label className="mb-1 block text-sm font-semibold text-camp-ink">{t('caption')}</label>
             <input
               type="text"
               value={editCaption}
               onChange={(e) => setEditCaption(e.target.value)}
               maxLength={200}
-              placeholder="Ajouter une légende…"
+              placeholder={t('captionPlaceholder')}
               className="input mb-4 w-full"
             />
 
             <div className="flex gap-2">
-              <button type="button" onClick={() => setEditing(null)} className="btn-ghost flex-1">Annuler</button>
+              <button type="button" onClick={() => setEditing(null)} className="btn-ghost flex-1">{t('cancel')}</button>
               <button
                 type="button"
                 onClick={handleSaveEdit}
                 disabled={busy === editing._id}
                 className="btn-primary flex-1"
               >
-                {busy === editing._id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Enregistrer'}
+                {busy === editing._id ? <Loader2 className="h-4 w-4 animate-spin" /> : t('save')}
               </button>
             </div>
           </div>

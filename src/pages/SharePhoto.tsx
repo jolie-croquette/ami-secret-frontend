@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@/i18n/router';
 import { Loader2, Upload, ArrowLeft } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { gamesApi } from '@/api/games';
@@ -13,6 +14,7 @@ import type { GameSummary } from '@/api/types';
  * L'utilisateur choisit la partie et la semaine, puis on uploade.
  */
 export default function SharePhoto() {
+  const { t } = useTranslation('lobby', { keyPrefix: 'share' });
   const navigate = useNavigate();
   const [blob, setBlob] = useState<Blob | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -43,7 +45,7 @@ export default function SharePhoto() {
         setGames(active);
         if (active.length === 1) setSelectedCode(active[0].code);
       } catch {
-        toast.error('Impossible de charger les données.');
+        toast.error(t('loadError'));
       } finally {
         setLoading(false);
       }
@@ -57,10 +59,10 @@ export default function SharePhoto() {
     try {
       const file = new File([blob], 'photo-partagee.jpg', { type: blob.type || 'image/jpeg' });
       await giftPhotoApi.upload(selectedCode, { week, photo: file, caption: caption || undefined });
-      toast.success('Photo partagée avec la partie !');
+      toast.success(t('shared'));
       navigate(`/lobby/${selectedCode}`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Échec de l'envoi.");
+      toast.error(err instanceof Error ? err.message : t('uploadError'));
     } finally {
       setBusy(false);
     }
@@ -82,38 +84,38 @@ export default function SharePhoto() {
           onClick={() => navigate('/dashboard')}
           className="mb-4 flex items-center gap-1.5 text-sm text-camp-bark hover:text-camp-ink"
         >
-          <ArrowLeft className="h-4 w-4" /> Retour
+          <ArrowLeft className="h-4 w-4" /> {t('back')}
         </button>
 
         <div className="card-sign p-6">
           <h1 className="mb-4 font-display text-xl font-black text-camp-pine-dark">
-            Partager une photo
+            {t('title')}
           </h1>
 
           {preview ? (
             <div className="mb-4 overflow-hidden rounded-xl">
-              <img src={preview} alt="Photo à partager" className="aspect-square w-full object-cover" />
+              <img src={preview} alt={t('previewAlt')} className="aspect-square w-full object-cover" />
             </div>
           ) : (
             <div className="mb-4 flex aspect-square w-full items-center justify-center rounded-xl bg-camp-bark/10">
-              <p className="text-sm text-camp-bark/60">Aucune image reçue</p>
+              <p className="text-sm text-camp-bark/60">{t('noImage')}</p>
             </div>
           )}
 
           {games.length === 0 ? (
             <p className="text-center text-sm text-camp-bark">
-              Tu n'as aucune partie en cours. Rejoins ou crée une partie d'abord.
+              {t('noGames')}
             </p>
           ) : (
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-semibold text-camp-ink">Partie</label>
+                <label className="mb-1 block text-sm font-semibold text-camp-ink">{t('game')}</label>
                 <select
                   value={selectedCode}
                   onChange={(e) => { setSelectedCode(e.target.value); setWeek(1); }}
                   className="field w-full"
                 >
-                  <option value="">— Choisir une partie —</option>
+                  <option value="">{t('chooseGame')}</option>
                   {games.map((g) => (
                     <option key={g.code} value={g.code}>{g.name}</option>
                   ))}
@@ -122,7 +124,7 @@ export default function SharePhoto() {
 
               {selectedCode && (
                 <div>
-                  <label className="mb-1 block text-sm font-semibold text-camp-ink">Semaine</label>
+                  <label className="mb-1 block text-sm font-semibold text-camp-ink">{t('week')}</label>
                   <select
                     value={week}
                     onChange={(e) => setWeek(Number(e.target.value))}
@@ -132,7 +134,7 @@ export default function SharePhoto() {
                       { length: games.find((g) => g.code === selectedCode)?.numberOfWeeks ?? 4 },
                       (_, i) => i + 1
                     ).map((w) => (
-                      <option key={w} value={w}>Semaine {w}</option>
+                      <option key={w} value={w}>{t('weekOption', { week: w })}</option>
                     ))}
                   </select>
                 </div>
@@ -140,14 +142,14 @@ export default function SharePhoto() {
 
               <div>
                 <label className="mb-1 block text-sm font-semibold text-camp-ink">
-                  Légende <span className="font-normal text-camp-bark/60">(optionnel)</span>
+                  {t('caption')} <span className="font-normal text-camp-bark/60">{t('optional')}</span>
                 </label>
                 <input
                   type="text"
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
                   maxLength={200}
-                  placeholder="Ajouter une légende…"
+                  placeholder={t('captionPlaceholder')}
                   className="field w-full"
                 />
               </div>
@@ -159,7 +161,7 @@ export default function SharePhoto() {
                 className="btn-primary w-full"
               >
                 {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
-                Partager dans la partie
+                {t('submit')}
               </button>
             </div>
           )}

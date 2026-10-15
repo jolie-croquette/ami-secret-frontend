@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Camera, Loader2, X } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import { giftPhotoApi } from '@/api/giftPhoto';
 
 /**
@@ -20,6 +21,7 @@ export default function GiftPhotoPrompt({
   onClose: () => void;
   onUploaded: () => void;
 }) {
+  const { t } = useTranslation('lobby', { keyPrefix: 'photoPrompt' });
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -30,7 +32,7 @@ export default function GiftPhotoPrompt({
       onUploaded();
       onClose();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Échec de l'envoi de la photo.");
+      toast.error(err instanceof Error ? err.message : t('uploadError'));
     } finally {
       setBusy(false);
     }
@@ -58,7 +60,7 @@ export default function GiftPhotoPrompt({
             type="button"
             onClick={busy ? undefined : onClose}
             disabled={busy}
-            aria-label="Fermer"
+            aria-label={t('close', { ns: 'common', keyPrefix: 'actions' })}
             className="absolute right-4 top-4 text-camp-bark/50 transition hover:text-camp-ink"
           >
             <X className="h-5 w-5" />
@@ -68,10 +70,10 @@ export default function GiftPhotoPrompt({
             <Camera className="h-6 w-6" />
           </span>
           <h2 className="mb-2 font-display text-lg font-black text-camp-pine-dark">
-            Prendre un selfie avec ton cadeau ?
+            {t('title')}
           </h2>
           <p className="mb-5 text-sm text-camp-bark">
-            Partage le moment dans le fil de la partie — tout le monde pourra le voir.
+            {t('body')}
           </p>
 
           <input
@@ -94,10 +96,10 @@ export default function GiftPhotoPrompt({
               className="btn-primary"
             >
               {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
-              Prendre une photo
+              {t('take')}
             </button>
             <button type="button" onClick={onClose} disabled={busy} className="btn-ghost">
-              Plus tard
+              {t('later')}
             </button>
           </div>
         </motion.div>
