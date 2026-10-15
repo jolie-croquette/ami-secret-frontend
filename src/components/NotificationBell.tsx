@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { useNavigate } from '@/i18n/router';
+import { useNavigate } from '@/i18n/navigation';
 import { AnimatePresence, motion } from 'motion/react';
 import { Bell, Gift, Sparkles, Inbox, UserMinus, BellOff, Camera } from 'lucide-react';
 import { AuthContext } from '@/context/AuthContext';

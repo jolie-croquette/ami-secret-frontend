@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from '@/i18n/router';
+import { useNavigate } from '@/i18n/navigation';
 import { motion } from 'motion/react';
 import { toast, ToastContainer } from 'react-toastify';
 import { KeyRound, Loader2, ArrowLeft } from 'lucide-react';

@@ -66,6 +66,14 @@ const common = {
     hoursAgo: 'il y a {{count}} h',
     daysAgo: 'il y a {{count}} j',
   },
+  legal: {
+    back: 'Retour',
+    lastUpdated: 'Dernière mise à jour : {{date}}',
+    updatedOn: '30 juin 2026',
+    termsTitle: "Conditions d'utilisation",
+    privacyTitle: 'Politique de confidentialité',
+    translationNotice: '',
+  },
   updateNote: {
     installTitle: 'Comment l’installer sur ton téléphone ?',
     iphone: 'iPhone (Safari)',

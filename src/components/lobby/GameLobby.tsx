@@ -2,7 +2,8 @@ import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams } from 'react-router-dom';
 import { Trans, useTranslation } from 'react-i18next';
-import { useNavigate, useLocalizePath } from '@/i18n/router';
+import i18n from '@/i18n';
+import { useNavigate, useLocalizePath } from '@/i18n/navigation';
 import { formatDate } from '@/i18n/format';
 import { AuthContext } from '@/context/AuthContext';
 import { toast, ToastContainer } from 'react-toastify';
@@ -146,7 +147,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
         navigate('/', { replace: true });
         return;
       }
-      setError(err instanceof Error ? err.message : t('loadError'));
+      setError(err instanceof Error ? err.message : i18n.t('loadError', { ns: 'lobby' }));
     } finally {
       setLoading(false);
     }

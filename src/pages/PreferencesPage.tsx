@@ -2,7 +2,7 @@ import { useContext, useEffect, useState, type ComponentType } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from '@/i18n/router';
+import { useNavigate } from '@/i18n/navigation';
 import { toast, ToastContainer } from 'react-toastify';
 import {
   Heart,

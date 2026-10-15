@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from '@/i18n/router';
+import i18n from '@/i18n';
+import { useNavigate } from '@/i18n/navigation';
 import { formatDate } from '@/i18n/format';
 import { AuthContext } from '@/context/AuthContext';
 import { motion } from 'motion/react';
@@ -322,7 +323,7 @@ export default function PlayerProfilePage() {
         setAnimal(data.favoriteAnimal ?? '');
         setWishlist(data.wishlist ?? []);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : t('errors.load'));
+        toast.error(err instanceof Error ? err.message : i18n.t('errors.load', { ns: 'profile' }));
       } finally {
         if (active) setLoading(false);
       }

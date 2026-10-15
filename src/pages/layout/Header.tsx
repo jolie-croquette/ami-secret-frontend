@@ -1,6 +1,7 @@
 import { useContext, useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from '@/i18n/router';
+import { Link } from '@/i18n/router';
+import { useNavigate } from '@/i18n/navigation';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { AuthContext } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';

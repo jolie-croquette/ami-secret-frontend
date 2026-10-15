@@ -1,7 +1,8 @@
 import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from '@/i18n/router';
+import i18n from '@/i18n';
+import { useNavigate } from '@/i18n/navigation';
 import { motion } from 'motion/react';
 import { toast, ToastContainer } from 'react-toastify';
 import { Plus, LogIn, Loader2, LogOut, KeyRound, CalendarDays } from 'lucide-react';
@@ -40,7 +41,7 @@ export default function Dashboard() {
           navigate('/', { replace: true });
           return;
         }
-        if (active) setError(err instanceof Error ? err.message : t('dashboard.unknownError'));
+        if (active) setError(err instanceof Error ? err.message : i18n.t('dashboard.unknownError', { ns: 'games' }));
       } finally {
         if (active) setLoading(false);
       }

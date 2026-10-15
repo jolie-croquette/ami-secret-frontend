@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useSwitchLang } from '@/i18n/useSwitchLang';
-import { useLang } from '@/i18n/router';
+import { useLang } from '@/i18n/navigation';
 
 /**
  * Bascule FR / EN : affiche la même page dans l'autre langue et mémorise le

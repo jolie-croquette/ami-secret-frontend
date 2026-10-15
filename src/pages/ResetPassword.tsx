@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from '@/i18n/router';
+import { Link } from '@/i18n/router';
+import { useNavigate } from '@/i18n/navigation';
 import { motion } from 'motion/react';
 import { toast, ToastContainer } from 'react-toastify';
 import { Lock, Loader2, ShieldQuestion } from 'lucide-react';

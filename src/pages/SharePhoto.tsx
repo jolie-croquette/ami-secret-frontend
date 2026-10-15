@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from '@/i18n/router';
+import i18n from '@/i18n';
+import { useNavigate } from '@/i18n/navigation';
 import { Loader2, Upload, ArrowLeft } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { gamesApi } from '@/api/games';
@@ -45,7 +46,7 @@ export default function SharePhoto() {
         setGames(active);
         if (active.length === 1) setSelectedCode(active[0].code);
       } catch {
-        toast.error(t('loadError'));
+        toast.error(i18n.t('share.loadError', { ns: 'lobby' }));
       } finally {
         setLoading(false);
       }

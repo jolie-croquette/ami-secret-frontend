@@ -68,6 +68,15 @@ const common: Translation<typeof fr> = {
     hoursAgo: '{{count}} h ago',
     daysAgo: '{{count}} d ago',
   },
+  legal: {
+    back: 'Back',
+    lastUpdated: 'Last updated: {{date}}',
+    updatedOn: 'June 30, 2026',
+    termsTitle: 'Terms of Use',
+    privacyTitle: 'Privacy Policy',
+    translationNotice:
+      'This English version is provided for convenience. If there is any discrepancy, the French version prevails.',
+  },
   updateNote: {
     installTitle: 'How do I install it on my phone?',
     iphone: 'iPhone (Safari)',

@@ -1,6 +1,6 @@
 import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from '@/i18n/router';
+import { useNavigate } from '@/i18n/navigation';
 import { motion } from 'motion/react';
 import { AuthContext } from '@/context/AuthContext';
 import { toast, ToastContainer } from 'react-toastify';
