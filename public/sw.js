@@ -68,7 +68,7 @@ self.addEventListener('fetch', (event) => {
           return res;
         })
         .catch(() =>
-          caches.match('/').then((r) => r ?? new Response('Hors ligne', { status: 503 }))
+          caches.match('/').then((r) => r ?? new Response('Hors ligne / Offline', { status: 503 }))
         )
     );
     return;

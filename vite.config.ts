@@ -7,7 +7,9 @@ export default defineConfig({
   base : '/',
   build: {
     rollupOptions: {
-      input: 'index.html'
+      // Deux points d'entrée : même app, mais <head> (SEO, aperçus de partage)
+      // en français à la racine et en anglais sous /en.
+      input: { main: 'index.html', en: 'index.en.html' },
     },
     assetsDir: 'assets',
   },

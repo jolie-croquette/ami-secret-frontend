@@ -1,22 +1,67 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://amisecret.xyz/</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://amisecret.xyz/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://amisecret.xyz/en" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://amisecret.xyz/" />
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://amisecret.xyz/en</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://amisecret.xyz/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://amisecret.xyz/en" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://amisecret.xyz/" />
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://amisecret.xyz/login</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://amisecret.xyz/login" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://amisecret.xyz/en/login" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://amisecret.xyz/login" />
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://amisecret.xyz/en/login</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://amisecret.xyz/login" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://amisecret.xyz/en/login" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://amisecret.xyz/login" />
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://amisecret.xyz/privacy</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://amisecret.xyz/privacy" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://amisecret.xyz/en/privacy" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://amisecret.xyz/privacy" />
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://amisecret.xyz/en/privacy</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://amisecret.xyz/privacy" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://amisecret.xyz/en/privacy" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://amisecret.xyz/privacy" />
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://amisecret.xyz/terms</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://amisecret.xyz/terms" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://amisecret.xyz/en/terms" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://amisecret.xyz/terms" />
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://amisecret.xyz/en/terms</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://amisecret.xyz/terms" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://amisecret.xyz/en/terms" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://amisecret.xyz/terms" />
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

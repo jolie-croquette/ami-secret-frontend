@@ -5,5 +5,9 @@ Disallow: /dashboard
 Disallow: /lobby/
 Disallow: /profile
 Disallow: /onboard
+Disallow: /en/dashboard
+Disallow: /en/lobby/
+Disallow: /en/profile
+Disallow: /en/onboard
 
 Sitemap: https://amisecret.xyz/sitemap.xml
