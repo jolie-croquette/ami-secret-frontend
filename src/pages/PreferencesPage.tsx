@@ -1,7 +1,8 @@
 import { useContext, useEffect, useState, type ComponentType } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 import { AnimatePresence, motion } from 'motion/react';
-import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@/i18n/router';
 import { toast, ToastContainer } from 'react-toastify';
 import {
   Heart,
@@ -21,9 +22,6 @@ import type { WishlistItem } from '@/api/types';
 import WishlistEditor from '@/components/WishlistEditor';
 import 'react-toastify/dist/ReactToastify.css';
 
-const COLOR_SUGGESTIONS = ['Bleu', 'Bleu pastel', 'Lavande', 'Vert', 'Jaune', 'Rouge', 'Rose', 'Turquoise', 'Violet'];
-const ANIMAL_SUGGESTIONS = ['Chat', 'Chien', 'Panda', 'Dauphin', 'Lapin', 'Renard', 'Koala', 'Tigre', 'Loutre', 'Hibou'];
-
 const clean = (arr: string[]): string[] =>
   arr
     .map((s) => s.trim().replace(/\s+/g, ' '))
@@ -42,6 +40,7 @@ function AnswerList({
   placeholder: string;
   icon: ComponentType<{ className?: string }>;
 }) {
+  const { t } = useTranslation('profile', { keyPrefix: 'onboarding' });
   const rows = values.length ? values : [''];
   const update = (i: number, v: string) => {
     const next = [...rows];
@@ -78,7 +77,7 @@ function AnswerList({
               type="button"
               className="icon-btn icon-btn-danger"
               onClick={() => removeAt(i)}
-              aria-label="Retirer cette réponse"
+              aria-label={t('removeAnswer')}
             >
               <X className="h-4 w-4" />
             </button>
@@ -86,7 +85,7 @@ function AnswerList({
         </div>
       ))}
       <button type="button" className="btn-ghost !px-4 !py-2 text-sm" onClick={add}>
-        <Plus className="h-4 w-4" /> Ajouter une réponse
+        <Plus className="h-4 w-4" /> {t('addAnswer')}
       </button>
     </div>
   );
@@ -95,6 +94,9 @@ function AnswerList({
 const TOTAL_STEPS = 7;
 
 export default function PreferencesPage() {
+  const { t } = useTranslation('profile');
+  const COLOR_SUGGESTIONS = t('onboarding.colorSuggestions', { returnObjects: true });
+  const ANIMAL_SUGGESTIONS = t('onboarding.animalSuggestions', { returnObjects: true });
   const [likes, setLikes] = useState<string[]>(['']);
   const [dislikes, setDislikes] = useState<string[]>(['']);
   const [allergies, setAllergies] = useState<string[]>(['']);
@@ -130,15 +132,15 @@ export default function PreferencesPage() {
 
   const canAdvance = (): boolean => {
     if (step === 0 && clean(likes).length === 0) {
-      toast.warning('Ajoute au moins une chose que tu aimes.');
+      toast.warning(t('onboarding.likesRequired'));
       return false;
     }
     if (step === 4 && !color.trim()) {
-      toast.warning('Indique ta couleur préférée.');
+      toast.warning(t('onboarding.colorRequired'));
       return false;
     }
     if (step === 5 && !animal.trim()) {
-      toast.warning('Indique ton animal préféré.');
+      toast.warning(t('onboarding.animalRequired'));
       return false;
     }
     return true;
@@ -152,21 +154,21 @@ export default function PreferencesPage() {
 
   const handleSubmit = async () => {
     if (!auth?.user) {
-      toast.error('Non authentifié.');
+      toast.error(t('onboarding.notAuthenticated'));
       return navigate('/login');
     }
     const L = clean(likes);
     if (L.length === 0) {
       setStep(0);
-      return toast.warning('Ajoute au moins une chose que tu aimes.');
+      return toast.warning(t('onboarding.likesRequired'));
     }
     if (!color.trim()) {
       setStep(4);
-      return toast.warning('Indique ta couleur préférée.');
+      return toast.warning(t('onboarding.colorRequired'));
     }
     if (!animal.trim()) {
       setStep(5);
-      return toast.warning('Indique ton animal préféré.');
+      return toast.warning(t('onboarding.animalRequired'));
     }
 
     setSubmitting(true);
@@ -183,44 +185,44 @@ export default function PreferencesPage() {
       });
       await auth?.refresh();
       localStorage.removeItem('prefs_draft');
-      toast.success('Préférences enregistrées.');
+      toast.success(t('onboarding.saved'));
       setTimeout(() => navigate('/dashboard', { replace: true }), 700);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Une erreur est survenue.');
+      toast.error(err instanceof Error ? err.message : t('errors.generic', { ns: 'common' }));
       setSubmitting(false);
     }
   };
 
   const steps: { title: string; subtitle: string; content: React.ReactNode }[] = [
     {
-      title: 'Ce que tu aimes',
-      subtitle: 'Une réponse par champ — ajoute-en autant que tu veux.',
+      title: t('onboarding.steps.likes.title'),
+      subtitle: t('onboarding.steps.likes.subtitle'),
       content: (
-        <AnswerList values={likes} onChange={setLikes} icon={Heart} placeholder="Ex : chocolat noir" />
+        <AnswerList values={likes} onChange={setLikes} icon={Heart} placeholder={t('onboarding.steps.likes.placeholder')} />
       ),
     },
     {
-      title: "Ce que tu n'aimes pas",
-      subtitle: 'Optionnel — ça aide ton ami secret à éviter les faux pas.',
+      title: t('onboarding.steps.dislikes.title'),
+      subtitle: t('onboarding.steps.dislikes.subtitle'),
       content: (
-        <AnswerList values={dislikes} onChange={setDislikes} icon={HeartCrack} placeholder="Ex : réglisse" />
+        <AnswerList values={dislikes} onChange={setDislikes} icon={HeartCrack} placeholder={t('onboarding.steps.dislikes.placeholder')} />
       ),
     },
     {
-      title: 'Tes allergies',
-      subtitle: 'Optionnel — important pour les cadeaux gourmands.',
+      title: t('onboarding.steps.allergies.title'),
+      subtitle: t('onboarding.steps.allergies.subtitle'),
       content: (
-        <AnswerList values={allergies} onChange={setAllergies} icon={ShieldAlert} placeholder="Ex : arachides" />
+        <AnswerList values={allergies} onChange={setAllergies} icon={ShieldAlert} placeholder={t('onboarding.steps.allergies.placeholder')} />
       ),
     },
     {
-      title: 'Ta liste de souhaits',
-      subtitle: 'Optionnel — des idées précises (titre, lien, prix) pour ton ami secret.',
+      title: t('onboarding.steps.wishlist.title'),
+      subtitle: t('onboarding.steps.wishlist.subtitle'),
       content: <WishlistEditor items={wishlist} onChange={setWishlist} />,
     },
     {
-      title: 'Ta couleur préférée',
-      subtitle: 'Une seule réponse.',
+      title: t('onboarding.steps.color.title'),
+      subtitle: t('onboarding.steps.color.subtitle'),
       content: (
         <div className="relative">
           <Palette className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-camp-bark/40" />
@@ -228,7 +230,7 @@ export default function PreferencesPage() {
             list="colors"
             value={color}
             onChange={(e) => setColor(e.target.value)}
-            placeholder="Ex : Bleu pastel"
+            placeholder={t('onboarding.steps.color.placeholder')}
             className="field pl-11"
           />
           <datalist id="colors">
@@ -240,8 +242,8 @@ export default function PreferencesPage() {
       ),
     },
     {
-      title: 'Ton animal préféré',
-      subtitle: 'Une seule réponse.',
+      title: t('onboarding.steps.animal.title'),
+      subtitle: t('onboarding.steps.animal.subtitle'),
       content: (
         <div className="relative">
           <PawPrint className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-camp-bark/40" />
@@ -249,7 +251,7 @@ export default function PreferencesPage() {
             list="animals"
             value={animal}
             onChange={(e) => setAnimal(e.target.value)}
-            placeholder="Ex : Renard"
+            placeholder={t('onboarding.steps.animal.placeholder')}
             className="field pl-11"
           />
           <datalist id="animals">
@@ -261,21 +263,21 @@ export default function PreferencesPage() {
       ),
     },
     {
-      title: 'Récapitulatif',
-      subtitle: 'Tout est bon ? Tu pourras modifier plus tard depuis ton profil.',
+      title: t('onboarding.steps.review.title'),
+      subtitle: t('onboarding.steps.review.subtitle'),
       content: (
         <dl className="space-y-3 text-sm">
-          <Recap label="J'aime" values={clean(likes)} />
-          <Recap label="Je n'aime pas" values={clean(dislikes)} />
-          <Recap label="Allergies" values={clean(allergies)} />
+          <Recap label={t('fields.likes')} values={clean(likes)} />
+          <Recap label={t('fields.dislikes')} values={clean(dislikes)} />
+          <Recap label={t('fields.allergies')} values={clean(allergies)} />
           <Recap
-            label="Liste de souhaits"
+            label={t('fields.wishlist')}
             values={wishlist
               .filter((w) => w.title.trim())
               .map((w) => w.title.trim() + (w.price?.trim() ? ` (${w.price.trim()})` : ''))}
           />
-          <Recap label="Couleur préférée" values={color.trim() ? [color.trim()] : []} />
-          <Recap label="Animal préféré" values={animal.trim() ? [animal.trim()] : []} />
+          <Recap label={t('fields.color')} values={color.trim() ? [color.trim()] : []} />
+          <Recap label={t('fields.animal')} values={animal.trim() ? [animal.trim()] : []} />
         </dl>
       ),
     },
@@ -290,7 +292,7 @@ export default function PreferencesPage() {
         {/* Progression */}
         <div className="mb-2 flex items-center justify-between text-sm font-bold text-camp-bark">
           <span>
-            Étape {step + 1} sur {TOTAL_STEPS}
+            {t('onboarding.progress', { current: step + 1, total: TOTAL_STEPS })}
           </span>
         </div>
         <div className="mb-8 h-2 w-full overflow-hidden rounded-full bg-camp-sand/70">
@@ -326,20 +328,20 @@ export default function PreferencesPage() {
               onClick={prev}
               disabled={step === 0 || submitting}
             >
-              <ArrowLeft className="h-4 w-4" /> Précédent
+              <ArrowLeft className="h-4 w-4" /> {t('onboarding.previous')}
             </button>
 
             {isReview ? (
               <button type="button" className="btn-primary" onClick={() => void handleSubmit()} disabled={submitting}>
                 {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : (
                   <>
-                    <Check className="h-5 w-5" /> Enregistrer
+                    <Check className="h-5 w-5" /> {t('onboarding.save')}
                   </>
                 )}
               </button>
             ) : (
               <button type="button" className="btn-primary" onClick={next} disabled={submitting}>
-                Suivant <ArrowRight className="h-4 w-4" />
+                {t('onboarding.next')} <ArrowRight className="h-4 w-4" />
               </button>
             )}
           </div>
@@ -352,9 +354,10 @@ export default function PreferencesPage() {
 }
 
 function Recap({ label, values }: { label: string; values: string[] }) {
+  const { t } = useTranslation('profile');
   return (
     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 border-b border-camp-bark/10 pb-2">
-      <dt className="font-bold text-camp-pine-dark">{label} :</dt>
+      <dt className="font-bold text-camp-pine-dark">{t('onboarding.recapLabel', { label })}</dt>
       <dd className="text-camp-bark">
         {values.length ? (
           <span className="flex flex-wrap gap-1.5">

@@ -3,12 +3,14 @@ import frAuth from './locales/fr/auth';
 import frComponents from './locales/fr/components';
 import frGames from './locales/fr/games';
 import frLanding from './locales/fr/landing';
+import frProfile from './locales/fr/profile';
 import frSeo from './locales/fr/seo';
 import enCommon from './locales/en/common';
 import enAuth from './locales/en/auth';
 import enComponents from './locales/en/components';
 import enGames from './locales/en/games';
 import enLanding from './locales/en/landing';
+import enProfile from './locales/en/profile';
 import enSeo from './locales/en/seo';
 
 /** Toutes les traductions, regroupées par langue puis par espace de noms. */
@@ -19,6 +21,7 @@ export const resources = {
     components: frComponents,
     games: frGames,
     landing: frLanding,
+    profile: frProfile,
     seo: frSeo,
   },
   en: {
@@ -27,6 +30,7 @@ export const resources = {
     components: enComponents,
     games: enGames,
     landing: enLanding,
+    profile: enProfile,
     seo: enSeo,
   },
 };

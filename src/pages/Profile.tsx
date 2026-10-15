@@ -1,5 +1,7 @@
 import { useContext, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@/i18n/router';
+import { formatDate } from '@/i18n/format';
 import { AuthContext } from '@/context/AuthContext';
 import { motion } from 'motion/react';
 import { toast, ToastContainer } from 'react-toastify';
@@ -11,8 +13,8 @@ import { MeritBadge } from '@/components/visuals/CampVisuals';
 import {
   privacyRequestApi,
   TYPE_LABELS,
-  STATUS_LABELS,
   type PrivacyRequestType,
+  type PrivacyRequestStatus,
   type PrivacyRequest,
 } from '@/api/privacyRequest';
 import { pushApi } from '@/api/push';
@@ -26,10 +28,11 @@ const STATUS_COLORS: Record<string, string> = {
   rejected: 'bg-camp-berry/15 text-camp-berry',
 };
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status }: { status: PrivacyRequestStatus }) {
+  const { t } = useTranslation('profile');
   return (
     <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_COLORS[status] ?? ''}`}>
-      {STATUS_LABELS[status as keyof typeof STATUS_LABELS] ?? status}
+      {t(`privacy.statuses.${status}`, { defaultValue: status })}
     </span>
   );
 }
@@ -50,6 +53,7 @@ function TagInput({
   onChange: (v: string[]) => void;
   placeholder?: string;
 }) {
+  const { t } = useTranslation('profile');
   const [draft, setDraft] = useState('');
   const ref = useRef<HTMLInputElement>(null);
 
@@ -66,10 +70,15 @@ function TagInput({
         <Icon className="h-4 w-4 text-camp-pine" /> {label}
       </label>
       <div className="flex flex-wrap gap-2 rounded-2xl border-2 border-camp-bark/25 bg-white/70 p-2 focus-within:ring-4 focus-within:ring-camp-sun/40">
-        {values.map((t, i) => (
+        {values.map((value, i) => (
           <span key={i} className="inline-flex items-center gap-1.5 rounded-full bg-camp-sand px-3 py-1 text-sm font-semibold text-camp-pine-dark">
-            {t}
-            <button type="button" onClick={() => onChange(values.filter((_, idx) => idx !== i))} className="text-camp-berry">
+            {value}
+            <button
+              type="button"
+              onClick={() => onChange(values.filter((_, idx) => idx !== i))}
+              aria-label={t('prefs.removeTag', { value })}
+              className="text-camp-berry"
+            >
               <X className="h-3.5 w-3.5" />
             </button>
           </span>
@@ -98,6 +107,7 @@ function TagInput({
 type PushPermission = 'default' | 'granted' | 'denied' | 'unsupported';
 
 function NotificationSection() {
+  const { t } = useTranslation('profile', { keyPrefix: 'notifications' });
   const [open, setOpen] = useState(false);
   const [permission, setPermission] = useState<PushPermission>('default');
   const [subscribed, setSubscribed] = useState(false);
@@ -141,7 +151,7 @@ function NotificationSection() {
         return;
       }
       const { publicKey } = await pushApi.getPublicKey();
-      if (!publicKey) throw new Error('Clé publique manquante.');
+      if (!publicKey) throw new Error(t('missingKey'));
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
@@ -153,9 +163,9 @@ function NotificationSection() {
         keys: { p256dh: raw.keys!.p256dh, auth: raw.keys!.auth },
       });
       await refreshState();
-      toast.success('Notifications activées sur cet appareil.');
+      toast.success(t('enabled'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur d'activation.");
+      toast.error(err instanceof Error ? err.message : t('enableError'));
     } finally {
       setBusy(false);
     }
@@ -171,9 +181,9 @@ function NotificationSection() {
         await sub.unsubscribe();
       }
       await refreshState();
-      toast.success('Notifications désactivées pour cet appareil.');
+      toast.success(t('disabled'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur de désactivation.');
+      toast.error(err instanceof Error ? err.message : t('disableError'));
     } finally {
       setBusy(false);
     }
@@ -188,7 +198,7 @@ function NotificationSection() {
       >
         <div className="flex items-center gap-3">
           <Bell className="h-5 w-5 text-camp-pine" />
-          <span className="font-display text-lg font-bold text-camp-pine-dark">Notifications</span>
+          <span className="font-display text-lg font-bold text-camp-pine-dark">{t('title')}</span>
         </div>
         <ChevronDown className={`h-5 w-5 text-camp-bark transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -198,7 +208,7 @@ function NotificationSection() {
           {permission === 'unsupported' && (
             <div className="flex items-start gap-3 rounded-xl bg-camp-sand/60 p-4 text-sm text-camp-bark">
               <BellOff className="mt-0.5 h-4 w-4 shrink-0 text-camp-bark/60" />
-              <p>Ton navigateur ne supporte pas les notifications push.</p>
+              <p>{t('unsupported')}</p>
             </div>
           )}
 
@@ -206,9 +216,9 @@ function NotificationSection() {
             <div className="flex items-start gap-3 rounded-xl bg-camp-berry/10 p-4 text-sm text-camp-berry">
               <BellOff className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
-                <p className="font-semibold">Notifications bloquées par le navigateur.</p>
+                <p className="font-semibold">{t('blockedTitle')}</p>
                 <p className="mt-1 text-camp-berry/80">
-                  Pour les réactiver, ouvre les paramètres de ton navigateur et autorise les notifications pour ce site.
+                  {t('blockedBody')}
                 </p>
               </div>
             </div>
@@ -225,12 +235,10 @@ function NotificationSection() {
                   )}
                   <div>
                     <p className="text-sm font-semibold text-camp-pine-dark">
-                      {subscribed ? 'Activées sur cet appareil' : 'Désactivées sur cet appareil'}
+                      {subscribed ? t('onTitle') : t('offTitle')}
                     </p>
                     <p className="text-xs text-camp-bark/60">
-                      {subscribed
-                        ? "Tu reçois des alertes pour les messages et les tirages."
-                        : "Tu ne reçois pas d'alertes sur cet appareil."}
+                      {subscribed ? t('onBody') : t('offBody')}
                     </p>
                   </div>
                 </div>
@@ -245,7 +253,7 @@ function NotificationSection() {
                   className="btn-ghost w-full justify-center"
                 >
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellOff className="h-4 w-4" />}
-                  Désactiver sur cet appareil
+                  {t('disable')}
                 </button>
               ) : (
                 <button
@@ -255,7 +263,7 @@ function NotificationSection() {
                   className="btn-primary w-full justify-center"
                 >
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
-                  Activer les notifications
+                  {t('enable')}
                 </button>
               )}
             </>
@@ -267,6 +275,7 @@ function NotificationSection() {
 }
 
 export default function PlayerProfilePage() {
+  const { t } = useTranslation('profile');
   const auth = useContext(AuthContext);
   const user = auth?.user;
   const navigate = useNavigate();
@@ -313,7 +322,7 @@ export default function PlayerProfilePage() {
         setAnimal(data.favoriteAnimal ?? '');
         setWishlist(data.wishlist ?? []);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erreur de chargement.');
+        toast.error(err instanceof Error ? err.message : t('errors.load'));
       } finally {
         if (active) setLoading(false);
       }
@@ -335,19 +344,19 @@ export default function PlayerProfilePage() {
     setSendingPrivacy(true);
     try {
       await privacyRequestApi.create({ type: privacyType, message: privacyMessage.trim() || undefined });
-      toast.success('Demande soumise. Je la traiterai dans les 30 jours.');
+      toast.success(t('privacy.submitted'));
       setPrivacyMessage('');
       await loadMyRequests();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Envoi impossible.');
+      toast.error(err instanceof Error ? err.message : t('privacy.submitError'));
     } finally {
       setSendingPrivacy(false);
     }
   };
 
   const saveIdentity = async () => {
-    if (!firstName.trim()) return toast.warning('Le prénom est requis.');
-    if (!lastName.trim()) return toast.warning('Le nom est requis.');
+    if (!firstName.trim()) return toast.warning(t('identity.firstNameRequired'));
+    if (!lastName.trim()) return toast.warning(t('identity.lastNameRequired'));
     setSavingIdentity(true);
     try {
       await userApi.updateProfile({
@@ -356,17 +365,17 @@ export default function PlayerProfilePage() {
         campName: campName.trim() || undefined,
       });
       await auth?.refresh();
-      toast.success('Identité mise à jour.');
+      toast.success(t('identity.saved'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur de sauvegarde.');
+      toast.error(err instanceof Error ? err.message : t('errors.save'));
     } finally {
       setSavingIdentity(false);
     }
   };
 
   const save = async () => {
-    if (likes.length === 0) return toast.warning("Ajoute au moins un « j'aime ».");
-    if (!color.trim() || !animal.trim()) return toast.warning('Couleur et animal sont requis.');
+    if (likes.length === 0) return toast.warning(t('prefs.likesRequired'));
+    if (!color.trim() || !animal.trim()) return toast.warning(t('prefs.colorAnimalRequired'));
     setSaving(true);
     try {
       await userApi.onboard({
@@ -380,9 +389,9 @@ export default function PlayerProfilePage() {
           .filter((w) => w.title),
       });
       await auth?.refresh();
-      toast.success('Profil mis à jour.');
+      toast.success(t('prefs.saved'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur de sauvegarde.');
+      toast.error(err instanceof Error ? err.message : t('errors.save'));
     } finally {
       setSaving(false);
     }
@@ -407,47 +416,47 @@ export default function PlayerProfilePage() {
         </motion.div>
 
         <div className="card-sign mb-6 space-y-5 p-6 sm:p-8">
-          <h2 className="font-display text-xl font-bold text-camp-pine-dark">Mon identité</h2>
+          <h2 className="font-display text-xl font-bold text-camp-pine-dark">{t('identity.title')}</h2>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
               <label className="field-label flex items-center gap-2">
-                <UserRound className="h-4 w-4 text-camp-pine" /> Prénom
+                <UserRound className="h-4 w-4 text-camp-pine" /> {t('identity.firstName')}
               </label>
               <input
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Ton prénom"
+                placeholder={t('identity.firstNamePlaceholder')}
                 className="field"
               />
             </div>
             <div>
               <label className="field-label flex items-center gap-2">
-                <UserRound className="h-4 w-4 text-camp-pine" /> Nom
+                <UserRound className="h-4 w-4 text-camp-pine" /> {t('identity.lastName')}
               </label>
               <input
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                placeholder="Ton nom"
+                placeholder={t('identity.lastNamePlaceholder')}
                 className="field"
               />
             </div>
           </div>
           <div>
             <label className="field-label flex items-center gap-2">
-              <Tent className="h-4 w-4 text-camp-pine" /> Nom de camp (optionnel)
+              <Tent className="h-4 w-4 text-camp-pine" /> {t('identity.campName')}
             </label>
             <input
               value={campName}
               onChange={(e) => setCampName(e.target.value)}
-              placeholder="Ex : Castor"
+              placeholder={t('identity.campNamePlaceholder')}
               className="field"
             />
             <p className="mt-1 text-xs text-camp-bark">
-              S’il est renseigné, c’est lui qui est affiché dans les parties. Sinon, ton prénom.
+              {t('identity.campNameHint')}
             </p>
           </div>
           <button onClick={() => void saveIdentity()} disabled={savingIdentity} className="btn-primary">
-            {savingIdentity ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Enregistrer mon identité'}
+            {savingIdentity ? <Loader2 className="h-5 w-5 animate-spin" /> : t('identity.save')}
           </button>
         </div>
 
@@ -457,41 +466,41 @@ export default function PlayerProfilePage() {
           </div>
         ) : (
           <div className="card-sign space-y-5 p-6 sm:p-8">
-            <h2 className="font-display text-xl font-bold text-camp-pine-dark">Préférences cadeaux</h2>
-            <TagInput label="J'aime" icon={Heart} values={likes} onChange={setLikes} placeholder="Ex : chocolat noir, plein air…" />
-            <TagInput label="Je n'aime pas" icon={HeartCrack} values={dislikes} onChange={setDislikes} placeholder="Ex : réglisse…" />
-            <TagInput label="Allergies" icon={ShieldAlert} values={allergies} onChange={setAllergies} placeholder="Ex : arachides…" />
+            <h2 className="font-display text-xl font-bold text-camp-pine-dark">{t('prefs.title')}</h2>
+            <TagInput label={t('fields.likes')} icon={Heart} values={likes} onChange={setLikes} placeholder={t('prefs.likesPlaceholder')} />
+            <TagInput label={t('fields.dislikes')} icon={HeartCrack} values={dislikes} onChange={setDislikes} placeholder={t('prefs.dislikesPlaceholder')} />
+            <TagInput label={t('fields.allergies')} icon={ShieldAlert} values={allergies} onChange={setAllergies} placeholder={t('prefs.allergiesPlaceholder')} />
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div>
                 <label className="field-label flex items-center gap-2">
-                  <Palette className="h-4 w-4 text-camp-pine" /> Couleur préférée
+                  <Palette className="h-4 w-4 text-camp-pine" /> {t('fields.color')}
                 </label>
-                <input value={color} onChange={(e) => setColor(e.target.value)} placeholder="Ex : Bleu pastel" className="field" />
+                <input value={color} onChange={(e) => setColor(e.target.value)} placeholder={t('prefs.colorPlaceholder')} className="field" />
               </div>
               <div>
                 <label className="field-label flex items-center gap-2">
-                  <PawPrint className="h-4 w-4 text-camp-pine" /> Animal préféré
+                  <PawPrint className="h-4 w-4 text-camp-pine" /> {t('fields.animal')}
                 </label>
-                <input value={animal} onChange={(e) => setAnimal(e.target.value)} placeholder="Ex : Renard" className="field" />
+                <input value={animal} onChange={(e) => setAnimal(e.target.value)} placeholder={t('prefs.animalPlaceholder')} className="field" />
               </div>
             </div>
 
             <div>
               <label className="field-label flex items-center gap-2">
-                <Gift className="h-4 w-4 text-camp-pine" /> Liste de souhaits
+                <Gift className="h-4 w-4 text-camp-pine" /> {t('fields.wishlist')}
               </label>
               <p className="mb-2 text-xs text-camp-bark">
-                Des idées précises (avec lien et prix) pour aider ton ami secret.
+                {t('prefs.wishlistHint')}
               </p>
               <WishlistEditor items={wishlist} onChange={setWishlist} />
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <button onClick={save} disabled={saving} className="btn-primary flex-1">
-                {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Enregistrer'}
+                {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : t('prefs.save')}
               </button>
               <button onClick={() => navigate('/dashboard')} disabled={saving} className="btn-ghost">
-                Retour
+                {t('prefs.back')}
               </button>
             </div>
           </div>
@@ -512,7 +521,7 @@ export default function PlayerProfilePage() {
           >
             <div className="flex items-center gap-3">
               <ShieldCheck className="h-5 w-5 text-camp-pine" />
-              <span className="font-display text-lg font-bold text-camp-pine-dark">Mes droits vie privée</span>
+              <span className="font-display text-lg font-bold text-camp-pine-dark">{t('privacy.title')}</span>
             </div>
             <ChevronDown className={`h-5 w-5 text-camp-bark transition-transform ${privacyOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -520,27 +529,27 @@ export default function PlayerProfilePage() {
           {privacyOpen && (
             <div className="space-y-5 border-t border-camp-bark/10 px-6 pb-6 pt-4">
               <p className="text-sm text-camp-bark">
-                Conformément à la Loi 25 (LPRPSP), tu peux exercer les droits suivants. Je traite chaque demande dans un délai de 30 jours.
+                {t('privacy.intro')}
               </p>
 
               <form onSubmit={(e) => void submitPrivacyRequest(e)} className="space-y-3">
                 <div>
-                  <label className="field-label">Type de demande</label>
+                  <label className="field-label">{t('privacy.type')}</label>
                   <select
                     className="field"
                     value={privacyType}
                     onChange={(e) => setPrivacyType(e.target.value as PrivacyRequestType)}
                   >
-                    {(Object.entries(TYPE_LABELS) as [PrivacyRequestType, string][]).map(([k, v]) => (
-                      <option key={k} value={k}>{v}</option>
+                    {(Object.keys(TYPE_LABELS) as PrivacyRequestType[]).map((k) => (
+                      <option key={k} value={k}>{t(`privacy.types.${k}`)}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="field-label">Message (optionnel)</label>
+                  <label className="field-label">{t('privacy.message')}</label>
                   <textarea
                     className="field min-h-[80px] resize-y"
-                    placeholder="Précise ta demande si nécessaire…"
+                    placeholder={t('privacy.messagePlaceholder')}
                     value={privacyMessage}
                     onChange={(e) => setPrivacyMessage(e.target.value)}
                     maxLength={1000}
@@ -548,28 +557,28 @@ export default function PlayerProfilePage() {
                 </div>
                 <button type="submit" className="btn-primary" disabled={sendingPrivacy}>
                   {sendingPrivacy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                  Soumettre la demande
+                  {t('privacy.submit')}
                 </button>
               </form>
 
               {myRequests.length > 0 && (
                 <div>
-                  <h3 className="mb-2 text-sm font-bold text-camp-pine-dark">Mes demandes</h3>
+                  <h3 className="mb-2 text-sm font-bold text-camp-pine-dark">{t('privacy.mine')}</h3>
                   <ul className="space-y-2">
                     {myRequests.map((r) => (
                       <li key={r._id} className="rounded-xl border border-camp-bark/15 bg-white/60 p-3 text-sm">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-semibold text-camp-pine-dark">{TYPE_LABELS[r.type]}</span>
+                          <span className="font-semibold text-camp-pine-dark">{t(`privacy.types.${r.type}`)}</span>
                           <StatusBadge status={r.status} />
                         </div>
                         {r.message && <p className="mt-1 text-camp-bark/80">{r.message}</p>}
                         {r.adminNote && (
                           <p className="mt-1 rounded bg-camp-sand/50 px-2 py-1 text-xs text-camp-ink">
-                            <strong>Note :</strong> {r.adminNote}
+                            <strong>{t('privacy.note')}</strong> {r.adminNote}
                           </p>
                         )}
                         <p className="mt-1 text-xs text-camp-bark/50">
-                          {new Date(r.createdAt).toLocaleDateString('fr-CA')}
+                          {formatDate(r.createdAt)}
                         </p>
                       </li>
                     ))}
