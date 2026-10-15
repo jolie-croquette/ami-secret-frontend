@@ -1,6 +1,9 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { Trans, useTranslation } from 'react-i18next';
+import { useNavigate, useLocalizePath } from '@/i18n/router';
+import { formatDate } from '@/i18n/format';
 import { AuthContext } from '@/context/AuthContext';
 import { toast, ToastContainer } from 'react-toastify';
 import {
@@ -43,10 +46,10 @@ import GiftPhotoPrompt from '@/components/lobby/GiftPhotoPrompt';
 import GiftPhotoFeed from '@/components/lobby/GiftPhotoFeed';
 import 'react-toastify/dist/ReactToastify.css';
 
-const STATUS_META: Record<GameStatus, { label: string; classes: string }> = {
-  lobby: { label: 'En attente', classes: 'bg-camp-sun/30 text-camp-bark' },
-  drawn: { label: 'Tirage fait', classes: 'bg-camp-ember/20 text-camp-ember-dark' },
-  revealed: { label: 'Révélé', classes: 'bg-camp-pine/15 text-camp-pine-dark' },
+const STATUS_CLASSES: Record<GameStatus, string> = {
+  lobby: 'bg-camp-sun/30 text-camp-bark',
+  drawn: 'bg-camp-ember/20 text-camp-ember-dark',
+  revealed: 'bg-camp-pine/15 text-camp-pine-dark',
 };
 
 const initials = (name = '') =>
@@ -71,8 +74,10 @@ function Chips({ items, tone }: { items?: string[]; tone: string }) {
 const CHAT_TEMPORARILY_DISABLED = false;
 
 export default function GameLobby({ admin }: { admin: boolean }) {
+  const { t } = useTranslation('lobby');
   const { code = '' } = useParams();
   const navigate = useNavigate();
+  const localizePath = useLocalizePath();
   const auth = useContext(AuthContext);
   const me = auth?.user;
 
@@ -141,7 +146,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
         navigate('/', { replace: true });
         return;
       }
-      setError(err instanceof Error ? err.message : 'Erreur de chargement.');
+      setError(err instanceof Error ? err.message : t('loadError'));
     } finally {
       setLoading(false);
     }
@@ -162,7 +167,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
   const saveDetails = async () => {
     if (!game) return;
     const name = editName.trim();
-    if (!name) return toast.warning('Le nom de la partie est requis.');
+    if (!name) return toast.warning(t('details.nameRequired'));
     setSavingDetails(true);
     try {
       const lobby = game.status === 'lobby';
@@ -172,10 +177,10 @@ export default function GameLobby({ admin }: { admin: boolean }) {
         numberOfWeeks: lobby ? editWeeks : undefined,
         reminderDayBefore: lobby ? editReminder : undefined,
       });
-      toast.success('Partie mise à jour.');
+      toast.success(t('details.saved'));
       await load();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Mise à jour impossible.');
+      toast.error(err instanceof Error ? err.message : t('details.saveError'));
     } finally {
       setSavingDetails(false);
     }
@@ -183,11 +188,11 @@ export default function GameLobby({ admin }: { admin: boolean }) {
 
   const removePlayer = async (userId: string, name: string) => {
     if (!game) return;
-    if (!window.confirm(`Expulser ${name} de la partie ?`)) return;
+    if (!window.confirm(t('players.kickConfirm', { name }))) return;
     setBusyPlayer(userId);
     try {
       await gamesApi.removePlayer(game._id, userId);
-      toast.success(`${name} a été expulsé.`);
+      toast.success(t('players.kicked', { name }));
       await load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Action impossible.');
@@ -202,10 +207,10 @@ export default function GameLobby({ admin }: { admin: boolean }) {
     try {
       if (isOrga) {
         await gamesApi.removeAdmin(game._id, userId);
-        toast.success(`${name} n'est plus organisateur.`);
+        toast.success(t('players.noLongerOrganizer', { name }));
       } else {
         await gamesApi.addAdmin(game._id, userId);
-        toast.success(`${name} est maintenant organisateur.`);
+        toast.success(t('players.nowOrganizer', { name }));
       }
       await load();
     } catch (err) {
@@ -215,42 +220,43 @@ export default function GameLobby({ admin }: { admin: boolean }) {
     }
   };
 
-  const copy = async (text: string, label: string) => {
+  const copy = async (text: string, successMessage: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success(`${label} copié.`);
+      toast.success(successMessage);
     } catch {
-      toast.error('Copie impossible.');
+      toast.error(t('copyError'));
     }
   };
 
-  const joinLink = `${window.location.origin}/game/join?code=${code}`;
+  // Lien d'invitation dans la langue courante (les invités arrivent sur la même version).
+  const joinLink = `${window.location.origin}${localizePath('/game/join')}?code=${code}`;
 
   const handleDraw = async () => {
     if (!game) return;
-    if (game.players.length < 2) return toast.warning('Il faut au moins 2 participants.');
-    if (!window.confirm('Lancer le tirage ? Cette action est définitive.')) return;
+    if (game.players.length < 2) return toast.warning(t('waiting.needTwo'));
+    if (!window.confirm(t('waiting.drawConfirm'))) return;
     setActing(true);
     try {
       await gamesApi.draw(code);
-      toast.success('Tirage effectué.');
+      toast.success(t('waiting.drawn'));
       await load();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Échec du tirage.');
+      toast.error(err instanceof Error ? err.message : t('waiting.drawError'));
     } finally {
       setActing(false);
     }
   };
 
   const handleReveal = async () => {
-    if (!window.confirm('Révéler tous les amis secrets ?')) return;
+    if (!window.confirm(t('organizer.revealConfirm'))) return;
     setActing(true);
     try {
       await gamesApi.reveal(code);
-      toast.success('Amis secrets révélés.');
+      toast.success(t('organizer.revealed'));
       await load();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Échec de la révélation.');
+      toast.error(err instanceof Error ? err.message : t('organizer.revealError'));
     } finally {
       setActing(false);
     }
@@ -263,7 +269,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
       setWeeksReceived(res.weeksReceived);
       setPhotoPromptWeek(week);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur.');
+      toast.error(err instanceof Error ? err.message : t('weeksReceived.error'));
     } finally {
       setBusyWeek(null);
     }
@@ -278,7 +284,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
         const res = await gamesApi.markWeek(code, week, false);
         setWeeksReceived(res.weeksReceived);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erreur.');
+        toast.error(err instanceof Error ? err.message : t('weeksReceived.error'));
       } finally {
         setBusyWeek(null);
       }
@@ -303,9 +309,9 @@ export default function GameLobby({ admin }: { admin: boolean }) {
       setDraft('');
       const updated = await messagesApi.inbox(code).catch(() => null);
       if (updated) setThreads(updated);
-      toast.success('Message envoyé.');
+      toast.success(t('chat.sent'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Envoi impossible.');
+      toast.error(err instanceof Error ? err.message : t('chat.sendError'));
     } finally {
       setSending(false);
     }
@@ -314,27 +320,27 @@ export default function GameLobby({ admin }: { admin: boolean }) {
   const [deleting, setDeleting] = useState(false);
   const deleteGame = async () => {
     if (!game) return;
-    if (!window.confirm(`Supprimer la partie « ${game.name} » ? Elle disparaîtra pour tous les participants.`)) return;
+    if (!window.confirm(t('details.deleteConfirm', { name: game.name }))) return;
     setDeleting(true);
     try {
       await gamesApi.deleteGame(game._id);
-      toast.success('Partie supprimée.');
+      toast.success(t('details.deleted'));
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Suppression impossible.');
+      toast.error(err instanceof Error ? err.message : t('details.deleteError'));
       setDeleting(false);
     }
   };
 
   const leave = async () => {
     if (!game) return;
-    if (!window.confirm('Quitter cette partie ?')) return;
+    if (!window.confirm(t('players.leaveConfirm'))) return;
     try {
       await gamesApi.leave(game._id);
-      toast.success('Tu as quitté la partie.');
+      toast.success(t('players.left'));
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur lors du départ.');
+      toast.error(err instanceof Error ? err.message : t('players.leaveError'));
     }
   };
 
@@ -344,7 +350,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
         <div className="grid min-h-[70vh] place-items-center">
           <div className="flex flex-col items-center gap-3">
             <Campfire className="w-20" />
-            <span className="font-hand text-2xl text-camp-ember-dark">Chargement du lobby…</span>
+            <span className="font-hand text-2xl text-camp-ember-dark">{t('loading')}</span>
           </div>
         </div>
       </div>
@@ -355,15 +361,15 @@ export default function GameLobby({ admin }: { admin: boolean }) {
     return (
       <div className="grid min-h-screen place-items-center bg-camp-cream bg-topo p-6 text-center">
         <div className="card-sign max-w-md p-8">
-          <h2 className="mb-2 font-display text-2xl font-black text-camp-berry">Oups</h2>
-          <p className="mb-5 text-camp-bark">{error ?? 'Partie introuvable.'}</p>
-          <button onClick={() => void load()} className="btn-primary">Réessayer</button>
+          <h2 className="mb-2 font-display text-2xl font-black text-camp-berry">{t('oops')}</h2>
+          <p className="mb-5 text-camp-bark">{error ?? t('notFound')}</p>
+          <button onClick={() => void load()} className="btn-primary">{t('retry')}</button>
         </div>
       </div>
     );
   }
 
-  const status = STATUS_META[game.status] ?? STATUS_META.lobby;
+  const statusKey: GameStatus = game.status in STATUS_CLASSES ? game.status : 'lobby';
   const drawn = game.status !== 'lobby';
 
   return (
@@ -377,20 +383,20 @@ export default function GameLobby({ admin }: { admin: boolean }) {
               <div>
                 <h1 className="font-display text-3xl font-black text-camp-pine-dark">{game.name}</h1>
                 <div className="mt-1 flex items-center gap-2">
-                  <span className={`badge-merit ${status.classes}`}>{status.label}</span>
-                  <span className="text-sm text-camp-bark">{game.numberOfWeeks} semaines</span>
+                  <span className={`badge-merit ${STATUS_CLASSES[statusKey]}`}>{t(`status.${statusKey}`, { ns: 'games' })}</span>
+                  <span className="text-sm text-camp-bark">{t('weeks', { count: game.numberOfWeeks })}</span>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {game.isAdmin && !admin && (
                 <button onClick={() => navigate(`/lobby/${code}/admin`)} className="btn-ghost !py-2 !px-4 text-sm">
-                  <ShieldCheck className="h-4 w-4" /> Vue admin
+                  <ShieldCheck className="h-4 w-4" /> {t('adminView')}
                 </button>
               )}
               {admin && (
                 <button onClick={() => navigate(`/lobby/${code}`)} className="btn-ghost !py-2 !px-4 text-sm">
-                  <ArrowLeft className="h-4 w-4" /> Vue joueur
+                  <ArrowLeft className="h-4 w-4" /> {t('playerView')}
                 </button>
               )}
             </div>
@@ -399,15 +405,15 @@ export default function GameLobby({ admin }: { admin: boolean }) {
           {/* Code + partage */}
           <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border-2 border-dashed border-camp-bark/30 bg-camp-sand/30 p-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-camp-bark/70">Code</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-camp-bark/70">{t('code')}</p>
               <p className="font-display text-2xl font-black tracking-[0.25em] text-camp-pine-dark">{game.code}</p>
             </div>
             <div className="ml-auto flex gap-2">
-              <button onClick={() => copy(game.code, 'Code')} className="btn-ghost !py-2 !px-4 text-sm">
-                <Copy className="h-4 w-4" /> Copier le code
+              <button onClick={() => copy(game.code, t('codeCopied'))} className="btn-ghost !py-2 !px-4 text-sm">
+                <Copy className="h-4 w-4" /> {t('copyCode')}
               </button>
-              <button onClick={() => copy(joinLink, 'Lien')} className="btn-ember !py-2 !px-4 text-sm">
-                <Share2 className="h-4 w-4" /> Partager le lien
+              <button onClick={() => copy(joinLink, t('linkCopied'))} className="btn-ember !py-2 !px-4 text-sm">
+                <Share2 className="h-4 w-4" /> {t('shareLink')}
               </button>
             </div>
           </div>
@@ -420,21 +426,21 @@ export default function GameLobby({ admin }: { admin: boolean }) {
             {admin && game.isAdmin && (
               <div className="card-sign p-6">
                 <h2 className="mb-4 flex items-center gap-2 font-display text-xl font-bold text-camp-pine-dark">
-                  <Settings className="h-5 w-5 text-camp-pine" /> Détails de la partie
+                  <Settings className="h-5 w-5 text-camp-pine" /> {t('details.title')}
                 </h2>
                 <div className="space-y-3">
                   <div>
-                    <label className="field-label">Nom de la partie</label>
+                    <label className="field-label">{t('details.name')}</label>
                     <input
                       className="field"
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
-                      placeholder="Nom"
+                      placeholder={t('details.namePlaceholder')}
                     />
                   </div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="field-label">Nombre de semaines</label>
+                      <label className="field-label">{t('details.weeks')}</label>
                       <input
                         className="field"
                         type="number"
@@ -446,7 +452,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                       />
                     </div>
                     <div>
-                      <label className="field-label">Jour de rappel (0–6 j. avant)</label>
+                      <label className="field-label">{t('details.reminder')}</label>
                       <input
                         className="field"
                         type="number"
@@ -460,12 +466,12 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                   </div>
                   {drawn && (
                     <p className="text-xs text-camp-bark/70">
-                      Le nombre de semaines et le rappel sont verrouillés après le tirage.
+                      {t('details.locked')}
                     </p>
                   )}
                   <button onClick={() => void saveDetails()} disabled={savingDetails} className="btn-primary">
                     {savingDetails ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-                    Enregistrer
+                    {t('details.save')}
                   </button>
 
                   <div className="mt-2 border-t border-camp-bark/10 pt-4">
@@ -475,10 +481,10 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                       className="btn-ghost !border-camp-berry/40 !text-camp-berry"
                     >
                       {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                      Supprimer la partie
+                      {t('details.delete')}
                     </button>
                     <p className="mt-1.5 text-xs text-camp-bark/70">
-                      La partie disparaît pour tous les participants. En cas d'erreur, l'administration du site peut la restaurer.
+                      {t('details.deleteHint')}
                     </p>
                   </div>
                 </div>
@@ -489,14 +495,14 @@ export default function GameLobby({ admin }: { admin: boolean }) {
             {!drawn ? (
               <div className="card-sign flex flex-col items-center gap-3 p-8 text-center">
                 <Tent className="w-20" />
-                <h2 className="font-display text-xl font-bold text-camp-pine-dark">En attente du tirage</h2>
+                <h2 className="font-display text-xl font-bold text-camp-pine-dark">{t('waiting.title')}</h2>
                 <p className="text-sm text-camp-bark">
-                  {game.players.length} participant{game.players.length > 1 ? 's' : ''} pour l’instant.
+                  {t('waiting.players', { count: game.players.length })}
                 </p>
                 {game.isAdmin && (
                   <button onClick={handleDraw} disabled={acting} className="btn-primary mt-2">
                     {acting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-                    Lancer le tirage
+                    {t('waiting.draw')}
                   </button>
                 )}
               </div>
@@ -506,7 +512,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                 {game.isMember && (
                   <div className="card-sign p-6">
                     <h2 className="mb-3 flex items-center gap-2 font-display text-xl font-bold text-camp-pine-dark">
-                      <Gift className="h-5 w-5 text-camp-ember" /> Mon ami secret
+                      <Gift className="h-5 w-5 text-camp-ember" /> {t('target.title')}
                     </h2>
                     {target ? (
                       <div className="space-y-4">
@@ -518,29 +524,29 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                         </div>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                           <div>
-                            <p className="field-label">Aime</p>
+                            <p className="field-label">{t('target.likes')}</p>
                             <Chips items={target.likes} tone="bg-camp-pine/10 text-camp-pine-dark" />
                           </div>
                           <div>
-                            <p className="field-label">N’aime pas</p>
+                            <p className="field-label">{t('target.dislikes')}</p>
                             <Chips items={target.dislikes} tone="bg-camp-berry/10 text-camp-berry" />
                           </div>
                           <div>
-                            <p className="field-label">Couleur préférée</p>
+                            <p className="field-label">{t('target.color')}</p>
                             <p className="text-sm text-camp-ink">{target.favoriteColor || '—'}</p>
                           </div>
                           <div>
-                            <p className="field-label">Animal préféré</p>
+                            <p className="field-label">{t('target.animal')}</p>
                             <p className="text-sm text-camp-ink">{target.favoriteAnimal || '—'}</p>
                           </div>
                           <div className="sm:col-span-2">
-                            <p className="field-label">Allergies</p>
+                            <p className="field-label">{t('target.allergies')}</p>
                             <Chips items={target.allergies} tone="bg-camp-sun/30 text-camp-bark" />
                           </div>
                           {target.wishlist && target.wishlist.length > 0 && (
                             <div className="sm:col-span-2">
                               <p className="field-label flex items-center gap-1.5">
-                                <Gift className="h-4 w-4 text-camp-ember" /> Idées de cadeaux
+                                <Gift className="h-4 w-4 text-camp-ember" /> {t('target.wishlist')}
                               </p>
                               <ul className="space-y-1.5">
                                 {target.wishlist.map((w, i) => (
@@ -573,7 +579,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-camp-bark">Ton ami secret n’est pas encore disponible.</p>
+                      <p className="text-sm text-camp-bark">{t('target.unavailable')}</p>
                     )}
                   </div>
                 )}
@@ -581,7 +587,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                 {/* Suivi des cadeaux reçus */}
                 {game.isMember && (
                   <div className="card-sign p-6">
-                    <h2 className="mb-3 font-display text-xl font-bold text-camp-pine-dark">Cadeaux reçus</h2>
+                    <h2 className="mb-3 font-display text-xl font-bold text-camp-pine-dark">{t('weeksReceived.title')}</h2>
                     <div className="flex flex-wrap gap-2">
                       {Array.from({ length: game.numberOfWeeks }, (_, i) => i + 1).map((week) => {
                         const done = weeksReceived.includes(week);
@@ -595,7 +601,9 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                                 ? 'border-camp-pine bg-camp-pine text-camp-cream'
                                 : 'border-camp-bark/25 bg-white/60 text-camp-bark hover:border-camp-pine/50'
                             }`}
-                            title={`Semaine ${week}`}
+                            title={t('weeksReceived.week', { week })}
+                            aria-label={t('weeksReceived.week', { week })}
+                            aria-pressed={done}
                           >
                             {busyWeek === week ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
@@ -609,7 +617,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                       })}
                     </div>
                     <p className="mt-3 text-xs text-camp-bark">
-                      Coche chaque semaine où tu as bien reçu ton cadeau.
+                      {t('weeksReceived.hint')}
                     </p>
                   </div>
                 )}
@@ -618,7 +626,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                 {game.isMember && (
                   <div className="card-sign p-6">
                     <h2 className="mb-3 flex items-center gap-2 font-display text-xl font-bold text-camp-pine-dark">
-                      <Gift className="h-5 w-5 text-camp-berry" /> Photos de la partie
+                      <Gift className="h-5 w-5 text-camp-berry" /> {t('photos.title')}
                     </h2>
                     <GiftPhotoFeed
                       photos={photos}
@@ -634,16 +642,16 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                 {game.isMember && CHAT_TEMPORARILY_DISABLED && (
                   <div className="card-sign p-6">
                     <h2 className="mb-3 flex items-center gap-2 font-display text-xl font-bold text-camp-pine-dark">
-                      <Inbox className="h-5 w-5 text-camp-lake" /> Messages anonymes
+                      <Inbox className="h-5 w-5 text-camp-lake" /> {t('chat.title')}
                     </h2>
                     <div className="flex items-start gap-3 rounded-2xl border-2 border-camp-sun/40 bg-camp-sun/10 p-4">
                       <AlertTriangle aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-camp-sun" />
                       <div>
                         <p className="text-sm font-bold text-camp-pine-dark">
-                          Messagerie temporairement indisponible
+                          {t('chat.disabledTitle')}
                         </p>
                         <p className="mt-0.5 text-sm text-camp-bark">
-                          On fait un peu de ménage dans le courrier du camp. Les messages anonymes reviennent très bientôt !
+                          {t('chat.disabledBody')}
                         </p>
                       </div>
                     </div>
@@ -652,16 +660,11 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                 {game.isMember && !CHAT_TEMPORARILY_DISABLED && (
                   <div className="card-sign p-6">
                     <h2 className="mb-3 flex items-center gap-2 font-display text-xl font-bold text-camp-pine-dark">
-                      <Inbox className="h-5 w-5 text-camp-lake" /> Messages anonymes
+                      <Inbox className="h-5 w-5 text-camp-lake" /> {t('chat.title')}
                     </h2>
 
                     <div className="mb-3 grid grid-cols-2 gap-1 rounded-full bg-camp-sand/80 p-1">
-                      {(
-                        [
-                          { tab: 'target', label: 'J’offre à…' },
-                          { tab: 'gifter', label: 'Je reçois de…' },
-                        ] as { tab: MessageRecipient; label: string }[]
-                      ).map(({ tab, label }) => (
+                      {(['target', 'gifter'] as MessageRecipient[]).map((tab) => (
                         <button
                           key={tab}
                           type="button"
@@ -672,23 +675,19 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                               : 'text-camp-pine'
                           }`}
                         >
-                          {label}
+                          {t(`chat.tabs.${tab}`)}
                         </button>
                       ))}
                     </div>
 
                     <p className="mb-4 text-xs text-camp-bark/70">
-                      {chatTab === 'target'
-                        ? 'Conversation anonyme avec la personne à qui TU offres des cadeaux.'
-                        : 'Conversation anonyme avec la personne qui T’offre des cadeaux. Réponds-lui sans savoir qui c’est.'}
+                      {t(`chat.intro.${chatTab}`)}
                     </p>
 
                     <div className="mb-4 space-y-3">
                       {threads[chatTab].length === 0 ? (
                         <p className="text-sm text-camp-bark/70">
-                          {chatTab === 'target'
-                            ? 'Aucun message pour l’instant. Envoie un indice à la personne à qui tu offres !'
-                            : 'Aucun message pour l’instant. Remercie la personne qui t’offre des cadeaux !'}
+                          {t(`chat.empty.${chatTab}`)}
                         </p>
                       ) : (
                         threads[chatTab].map((m) => (
@@ -697,11 +696,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                             className={`flex flex-col ${m.mine ? 'items-end' : 'items-start'}`}
                           >
                             <span className="mb-1 px-1 text-xs font-bold text-camp-bark/70">
-                              {m.mine
-                                ? 'Moi'
-                                : chatTab === 'target'
-                                  ? 'La personne à qui j’offre'
-                                  : 'La personne qui m’offre'}
+                              {m.mine ? t('chat.me') : t(`chat.other.${chatTab}`)}
                             </span>
                             <div
                               className={`max-w-[85%] rounded-2xl border-2 p-3 ${
@@ -716,7 +711,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                                   m.mine ? 'text-camp-cream/70' : 'text-camp-bark/60'
                                 }`}
                               >
-                                {new Date(m.createdAt).toLocaleDateString('fr-CA')}
+                                {formatDate(m.createdAt)}
                               </p>
                             </div>
                           </div>
@@ -729,14 +724,11 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                         value={draft}
                         onChange={(e) => setDraft(e.target.value)}
                         maxLength={500}
-                        placeholder={
-                          chatTab === 'target'
-                            ? 'Un indice pour la personne à qui tu offres…'
-                            : 'Un mot pour la personne qui t’offre des cadeaux…'
-                        }
+                        placeholder={t(`chat.placeholder.${chatTab}`)}
+                        aria-label={t(`chat.placeholder.${chatTab}`)}
                         className="field flex-1"
                       />
-                      <button type="submit" disabled={sending} className="btn-primary !px-4">
+                      <button type="submit" disabled={sending} className="btn-primary !px-4" aria-label={t('chat.send')}>
                         {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                       </button>
                     </form>
@@ -747,17 +739,17 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                 {admin && game.isAdmin && (
                   <div className="card-sign p-6">
                     <h2 className="mb-3 flex items-center gap-2 font-display text-xl font-bold text-camp-pine-dark">
-                      <Crown className="h-5 w-5 text-camp-sun" /> Organisateur
+                      <Crown className="h-5 w-5 text-camp-sun" /> {t('organizer.title')}
                     </h2>
                     {game.status === 'drawn' && (
                       <button onClick={handleReveal} disabled={acting} className="btn-ember mb-4">
                         {acting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Eye className="h-5 w-5" />}
-                        Révéler les amis secrets
+                        {t('organizer.reveal')}
                       </button>
                     )}
                     {progress && (
                       <div className="space-y-2">
-                        <p className="field-label">Progression des cadeaux reçus</p>
+                        <p className="field-label">{t('organizer.progress')}</p>
                         <ProgressViz progress={progress} />
                       </div>
                     )}
@@ -768,10 +760,10 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                 {game.isSiteAdmin && game.assignments && game.assignments.length > 0 && (
                   <div className="card-sign border-camp-ember/40 p-6">
                     <h2 className="mb-1 flex items-center gap-2 font-display text-xl font-bold text-camp-pine-dark">
-                      <Eye className="h-5 w-5 text-camp-ember" /> Résultat du tirage
+                      <Eye className="h-5 w-5 text-camp-ember" /> {t('assignments.title')}
                     </h2>
                     <p className="mb-3 text-xs text-camp-bark">
-                      Visible uniquement par l’administration du site — qui offre à qui.
+                      {t('assignments.hint')}
                     </p>
                     <ul className="space-y-1.5">
                       {game.assignments.map((a) => (
@@ -795,7 +787,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
           <div className="space-y-6">
             <div className="card-sign p-6">
               <h2 className="mb-4 font-display text-xl font-bold text-camp-pine-dark">
-                Participants ({game.players.length})
+                {t('players.title', { count: game.players.length })}
               </h2>
               <ul className="space-y-2">
                 {game.players.map((p) => {
@@ -812,16 +804,17 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                       <span className="flex-1 truncate text-sm font-semibold text-camp-ink">{p.name}</span>
                       {isP_admin && (
                         <span className="badge-merit bg-camp-sun/30 text-camp-bark">
-                          <Crown className="h-3 w-3" /> Orga
+                          <Crown className="h-3 w-3" /> {t('players.organizer')}
                         </span>
                       )}
-                      {isMe && <span className="badge-merit bg-camp-pine/15 text-camp-pine-dark">Moi</span>}
+                      {isMe && <span className="badge-merit bg-camp-pine/15 text-camp-pine-dark">{t('players.me')}</span>}
 
                       {canManage && (
                         <span className="flex items-center gap-1">
                           <button
                             className="icon-btn !h-8 !w-8"
-                            title={isP_admin ? 'Retirer le rôle organisateur' : 'Nommer organisateur'}
+                            title={isP_admin ? t('players.removeOrganizer') : t('players.makeOrganizer')}
+                            aria-label={isP_admin ? t('players.removeOrganizer') : t('players.makeOrganizer')}
                             disabled={playerBusy}
                             onClick={() => void toggleOrganizer(p._id, p.name, isP_admin)}
                           >
@@ -836,7 +829,8 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                           {!isP_admin && (!drawn || game.isSiteAdmin) && (
                             <button
                               className="icon-btn icon-btn-danger !h-8 !w-8"
-                              title="Expulser de la partie"
+                              title={t('players.kick')}
+                              aria-label={t('players.kick')}
                               disabled={playerBusy}
                               onClick={() => void removePlayer(p._id, p.name)}
                             >
@@ -852,7 +846,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
 
               {game.isMember && !drawn && (
                 <button onClick={leave} className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-camp-berry/10 px-4 py-2 text-sm font-bold text-camp-berry hover:bg-camp-berry/20">
-                  <LogOut className="h-4 w-4" /> Quitter la partie
+                  <LogOut className="h-4 w-4" /> {t('players.leave')}
                 </button>
               )}
             </div>
@@ -872,14 +866,14 @@ export default function GameLobby({ admin }: { admin: boolean }) {
               <AlertTriangle className="h-6 w-6" />
             </div>
             <h2 className="mb-2 text-center font-display text-lg font-black text-camp-pine-dark">
-              Tu as bien reçu ton cadeau ?
+              {t('confirmReceived.title')}
             </h2>
             <p className="mb-1 text-center text-sm text-camp-bark">
-              Confirme seulement si <strong>tu as reçu</strong> ton cadeau cette semaine, pas que tu en as donné un.
+              <Trans t={t} i18nKey="confirmReceived.body" components={{ strong: <strong /> }} />
             </p>
             <p className="mb-5 flex items-start justify-center gap-1.5 text-center text-xs text-camp-bark/70">
               <AlertTriangle aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-camp-sun" />
-              Si tu partages une photo, fais attention à ne pas révéler l'identité de ton Ami Secret.
+              {t('confirmReceived.photoWarning')}
             </p>
             <label className="mb-4 flex cursor-pointer items-center gap-2 text-sm text-camp-bark select-none">
               <input
@@ -887,7 +881,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                 className="h-4 w-4 rounded accent-camp-pine"
                 onChange={(e) => { dontShowRef.current = e.target.checked; }}
               />
-              Ne plus afficher ce message
+              {t('confirmReceived.dontShowAgain')}
             </label>
             <div className="flex gap-2">
               <button
@@ -895,7 +889,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                 onClick={() => setReceivedConfirmWeek(null)}
                 className="btn-ghost flex-1"
               >
-                Annuler
+                {t('confirmReceived.cancel')}
               </button>
               <button
                 type="button"
@@ -907,7 +901,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
                   void doMarkReceived(week);
                 }}
               >
-                Oui, j'ai reçu mon cadeau
+                {t('confirmReceived.confirm')}
               </button>
             </div>
           </div>
@@ -921,7 +915,7 @@ export default function GameLobby({ admin }: { admin: boolean }) {
           week={photoPromptWeek}
           onClose={() => setPhotoPromptWeek(null)}
           onUploaded={() => {
-            toast.success('Photo partagée avec la partie !');
+            toast.success(t('photos.shared'));
             loadPhotos();
           }}
         />

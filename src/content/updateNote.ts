@@ -35,7 +35,7 @@ const UPDATE_NOTES: Record<Lang, UpdateNote> = {
     title: 'What’s new',
     items: [
       'First name, last name and nickname: your profile just got more personal! If you add a nickname, that’s what other players will see in your games (otherwise, your first name). A quick pop-up will ask you to fill these in, just once.',
-      'Chat, reimagined: two separate anonymous conversations. “I’m gifting…” lets you send hints to the person you’re shopping for, and “My Secret Santa” lets you reply to whoever is gifting you, without ever finding out who it is.',
+      'Chat, reimagined: two separate anonymous conversations. “My giftee” lets you send hints to the person you’re shopping for, and “My Secret Santa” lets you reply to whoever is gifting you, without ever finding out who it is.',
       'Welcome tutorial on mobile: a quick tour of the app pops up on your first visit, and you can replay it anytime with the “?” button at the top of the screen.',
       'Install it on your phone: the app now offers to add itself to your home screen so it opens just like a regular app (see “How do I install it” below).',
     ],
