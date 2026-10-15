@@ -1,4 +1,4 @@
-import { useContext, useLayoutEffect, useState } from 'react';
+import { useContext, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Languages, X } from 'lucide-react';
@@ -34,27 +34,34 @@ export default function LangSync() {
   const user = auth?.user;
   const preferred: Lang | null = user ? (user.locale ?? 'fr') : getStoredLang();
 
+  // Valeurs lues par l'effet de navigation sans le redéclencher : on ne
+  // réagit qu'à un changement d'URL, jamais au changement de préférence
+  // lui-même (le sélecteur FR/EN met à jour la préférence puis navigue).
+  const latest = useRef({ preferred, user, auth, search, hash });
+  latest.current = { preferred, user, auth, search, hash };
+
   useLayoutEffect(() => {
-    if (admin) {
-      if (i18n.language !== 'fr') void i18n.changeLanguage('fr');
+    if (admin) return;
+    const { preferred: pref, user: u, auth: a, search: s, hash: h } = latest.current;
+
+    if (urlLang === 'fr' && pref === 'en') {
+      navigate(`${localizePath(bare, 'en')}${s}${h}`, { replace: true });
       return;
     }
 
-    if (urlLang === 'fr' && preferred === 'en') {
-      navigate(`${localizePath(bare, 'en')}${search}${hash}`, { replace: true });
-      return;
-    }
-
-    if (urlLang === 'en' && preferred !== 'en') {
+    if (urlLang === 'en' && pref !== 'en') {
       storeLang('en');
-      if (user) {
-        auth?.setUser((u) => (u ? { ...u, locale: 'en' } : u));
+      if (u) {
+        a?.setUser((prev) => (prev ? { ...prev, locale: 'en' } : prev));
         userApi.setLocale('en').catch(() => {});
       }
     }
+  }, [admin, urlLang, bare, navigate]);
 
+  // Langue affichée = langue de l'URL (l'admin reste en français).
+  useLayoutEffect(() => {
     if (i18n.language !== urlLang) void i18n.changeLanguage(urlLang);
-  }, [admin, urlLang, preferred, bare, search, hash, navigate, i18n, user, auth]);
+  }, [urlLang, i18n]);
 
   const other: Lang = urlLang === 'en' ? 'fr' : 'en';
   const showSuggestion =

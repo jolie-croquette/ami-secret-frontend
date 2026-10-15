@@ -6,7 +6,13 @@ import { useLang } from '@/i18n/navigation';
  * Bascule FR / EN : affiche la même page dans l'autre langue et mémorise le
  * choix. `tone="dark"` pour les fonds foncés (pied de page).
  */
-export default function LanguageSwitcher({ tone = 'light' }: { tone?: 'light' | 'dark' }) {
+export default function LanguageSwitcher({
+  tone = 'light',
+  className = '',
+}: {
+  tone?: 'light' | 'dark';
+  className?: string;
+}) {
   const { t } = useTranslation();
   const lang = useLang();
   const switchLang = useSwitchLang();
@@ -24,7 +30,7 @@ export default function LanguageSwitcher({ tone = 'light' }: { tone?: 'light' | 
       lang={other}
       aria-label={t('language.switchTo')}
       title={t('language.switchTo')}
-      className={`flex h-9 min-w-9 items-center justify-center rounded-full border-2 px-2 text-xs font-extrabold tracking-wide transition ${styles}`}
+      className={`flex h-9 min-w-9 items-center justify-center rounded-full border-2 px-2 text-xs font-extrabold tracking-wide transition ${styles} ${className}`}
     >
       {other.toUpperCase()}
     </button>

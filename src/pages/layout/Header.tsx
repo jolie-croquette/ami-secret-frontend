@@ -70,7 +70,7 @@ export default function Header() {
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-camp-pine text-camp-cream shadow-sign-sm">
             <TreePine className="h-5 w-5" />
           </span>
-          <span className="font-display text-xl font-black tracking-tight text-camp-pine-dark">
+          <span className="whitespace-nowrap font-display text-xl font-black tracking-tight text-camp-pine-dark">
             {t('brand')}
           </span>
         </Link>
@@ -89,7 +89,8 @@ export default function Header() {
 
         {auth?.user && (
           <div className="flex items-center gap-2">
-            <LanguageSwitcher />
+            {/* Sur mobile, le sélecteur reste accessible dans le pied de page. */}
+            <LanguageSwitcher className="hidden sm:flex" />
             {isMobileDevice() && (
               <button
                 type="button"
