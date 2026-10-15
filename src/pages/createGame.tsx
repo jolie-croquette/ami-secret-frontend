@@ -1,5 +1,6 @@
 import { useContext, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@/i18n/router';
 import { motion } from 'motion/react';
 import { AuthContext } from '@/context/AuthContext';
 import { toast, ToastContainer } from 'react-toastify';
@@ -14,6 +15,7 @@ const clampInt = (v: string, min: number, fallback: number) => {
 };
 
 export default function CreateGame() {
+  const { t } = useTranslation('games', { keyPrefix: 'create' });
   const { user } = useContext(AuthContext) ?? ({} as never);
   const [name, setName] = useState('');
   const [weeks, setWeeks] = useState(4);
@@ -24,9 +26,9 @@ export default function CreateGame() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = name.trim();
-    if (!cleanName) return toast.warning('Donne un nom à ta partie.');
+    if (!cleanName) return toast.warning(t('nameRequired'));
     const adminName = String(user?.name || '').trim();
-    if (!adminName) return toast.error('Impossible de récupérer ton nom.');
+    if (!adminName) return toast.error(t('noName'));
 
     setSubmitting(true);
     try {
@@ -36,10 +38,10 @@ export default function CreateGame() {
         reminderDays: clampInt(String(reminderDays), 0, 0),
         players: [adminName],
       });
-      toast.success('Partie créée.');
+      toast.success(t('created'));
       navigate(`/lobby/${game.code}/admin`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur lors de la création.');
+      toast.error(err instanceof Error ? err.message : t('error'));
       setSubmitting(false);
     }
   };
@@ -56,13 +58,13 @@ export default function CreateGame() {
         noValidate
       >
         <h1 className="mb-1 text-center font-display text-3xl font-black text-camp-pine-dark">
-          Créer une partie
+          {t('title')}
         </h1>
-        <p className="label-hand mb-7 text-center text-2xl">prépare ton échange de cadeaux</p>
+        <p className="label-hand mb-7 text-center text-2xl">{t('subtitle')}</p>
 
         <div className="space-y-5">
           <div>
-            <label htmlFor="name" className="field-label">Nom de la partie</label>
+            <label htmlFor="name" className="field-label">{t('name')}</label>
             <div className="relative">
               <Tag className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-camp-bark/45" />
               <input
@@ -71,7 +73,7 @@ export default function CreateGame() {
                 autoFocus
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ex : Camp de jour 2026"
+                placeholder={t('namePlaceholder')}
                 className="field pl-11"
                 disabled={submitting}
               />
@@ -80,7 +82,7 @@ export default function CreateGame() {
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
-              <label htmlFor="weeks" className="field-label">Durée (semaines)</label>
+              <label htmlFor="weeks" className="field-label">{t('weeks')}</label>
               <div className="relative">
                 <CalendarDays className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-camp-bark/45" />
                 <input
@@ -96,7 +98,7 @@ export default function CreateGame() {
               </div>
             </div>
             <div>
-              <label htmlFor="reminder" className="field-label">Rappel (jours avant)</label>
+              <label htmlFor="reminder" className="field-label">{t('reminder')}</label>
               <div className="relative">
                 <BellRing className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-camp-bark/45" />
                 <input
@@ -115,16 +117,16 @@ export default function CreateGame() {
           </div>
 
           <p className="text-xs text-camp-bark">
-            Tu participes à la partie et tu en es l’organisateur. Les autres rejoindront avec le code.
+            {t('hint')}
           </p>
         </div>
 
         <div className="mt-7 flex items-center justify-between gap-3">
           <button type="button" onClick={() => navigate(-1)} className="btn-ghost" disabled={submitting}>
-            <ArrowLeft className="h-4 w-4" /> Retour
+            <ArrowLeft className="h-4 w-4" /> {t('back')}
           </button>
           <button type="submit" className="btn-primary flex-1" disabled={submitting}>
-            {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Créer la partie'}
+            {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : t('submit')}
           </button>
         </div>
       </motion.form>

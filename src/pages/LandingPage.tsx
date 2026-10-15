@@ -1,5 +1,6 @@
 import { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Trans, useTranslation } from 'react-i18next';
+import { Link } from '@/i18n/router';
 import { motion } from 'motion/react';
 import {
   Gift,
@@ -24,76 +25,36 @@ import { AuthContext } from '@/context/AuthContext';
 import { Pennants, PineTree, CampScene, MeritBadge } from '@/components/visuals/CampVisuals';
 
 const AUDIENCES = [
-  { icon: Users, label: 'Entre amis' },
-  { icon: House, label: 'En famille' },
-  { icon: Briefcase, label: 'Au bureau' },
-  { icon: GraduationCap, label: 'À l’école' },
-  { icon: Tent, label: 'Au camp' },
-  { icon: Trophy, label: 'Dans ton équipe' },
-];
+  { icon: Users, key: 'friends' },
+  { icon: House, key: 'family' },
+  { icon: Briefcase, key: 'office' },
+  { icon: GraduationCap, key: 'school' },
+  { icon: Tent, key: 'camp' },
+  { icon: Trophy, key: 'team' },
+] as const;
 
 const FEATURES = [
-  {
-    icon: Shuffle,
-    title: 'Tirage secret et équitable',
-    text: 'Un clic et chaque participant reçoit une personne à gâter : personne ne pige son propre nom, et personne ne peut tricher.',
-  },
-  {
-    icon: ListChecks,
-    title: 'Préférences et liste de souhaits',
-    text: 'Goûts, allergies, idées de cadeaux avec liens et prix : chacun remplit son profil pour aider sa bonne fée.',
-  },
-  {
-    icon: MessageSquareHeart,
-    title: 'Messages anonymes',
-    text: 'Envoie des indices à la personne que tu gâtes et réponds à celle qui te gâte, sans jamais dévoiler qui tu es.',
-  },
-  {
-    icon: Camera,
-    title: 'Photos des cadeaux reçus',
-    text: 'Partage une photo quand tu reçois une surprise : tout le groupe en profite dans le fil de la partie.',
-  },
-  {
-    icon: BellRing,
-    title: 'Notifications et rappels',
-    text: 'Alertes de tirage, messages reçus et rappels avant chaque échange, directement sur ton téléphone.',
-  },
-  {
-    icon: Smartphone,
-    title: 'Installable comme une app',
-    text: 'Ajoute Ami Secret à ton écran d’accueil et ouvre-le comme une vraie application, sur iPhone comme sur Android.',
-  },
-];
+  { icon: Shuffle, key: 'draw' },
+  { icon: ListChecks, key: 'wishlist' },
+  { icon: MessageSquareHeart, key: 'messages' },
+  { icon: Camera, key: 'photos' },
+  { icon: BellRing, key: 'reminders' },
+  { icon: Smartphone, key: 'install' },
+] as const;
 
 const STEPS = [
-  {
-    icon: Sparkles,
-    title: 'Crée ta partie',
-    text: 'Donne-lui un nom, choisis la durée (1 à 52 semaines) et obtiens un code unique à 6 lettres.',
-  },
-  {
-    icon: KeyRound,
-    title: 'Invite ton groupe',
-    text: 'Partage le code ou le lien : chacun se joint en quelques secondes et remplit ses préférences.',
-  },
-  {
-    icon: Shuffle,
-    title: 'Lance le tirage',
-    text: 'Chaque personne découvre qui elle gâte, et ça reste secret jusqu’à la grande révélation.',
-  },
-  {
-    icon: Gift,
-    title: 'Gâtez-vous !',
-    text: 'Cadeaux, indices anonymes, photos et suivi semaine par semaine, jusqu’au dévoilement final.',
-  },
-];
+  { icon: Sparkles, key: 'create' },
+  { icon: KeyRound, key: 'invite' },
+  { icon: Shuffle, key: 'draw' },
+  { icon: Gift, key: 'enjoy' },
+] as const;
 
 const SCREENSHOTS = [
-  { src: '/screenshots/app-dashboard.png', alt: 'Tableau de bord : tes parties en cours', caption: 'Toutes tes parties au même endroit' },
-  { src: '/screenshots/app-lobby.png', alt: 'Partie : la personne que tu gâtes et ses préférences', caption: 'Découvre qui tu gâtes et ses goûts' },
-  { src: '/screenshots/app-chat.png', alt: 'Messages anonymes entre participants', caption: 'Jase anonymement avec ton ami secret' },
-  { src: '/screenshots/app-profil.png', alt: 'Profil : identité et préférences cadeaux', caption: 'Ton profil et ta liste de souhaits' },
-];
+  { src: '/screenshots/app-dashboard.png', key: 'dashboard' },
+  { src: '/screenshots/app-lobby.png', key: 'lobby' },
+  { src: '/screenshots/app-chat.png', key: 'chat' },
+  { src: '/screenshots/app-profil.png', key: 'profile' },
+] as const;
 
 function PhoneFrame({ src, alt }: { src: string; alt: string }) {
   return (
@@ -106,12 +67,13 @@ function PhoneFrame({ src, alt }: { src: string; alt: string }) {
 }
 
 export default function LandingPage() {
+  const { t } = useTranslation('landing');
   const auth = useContext(AuthContext);
   const user = auth?.user;
 
   const primaryCta = user
-    ? { to: '/dashboard', label: 'Ouvrir mes parties' }
-    : { to: '/login?mode=signup', label: 'Créer mon échange gratuitement' };
+    ? { to: '/dashboard', label: t('ctaDashboard') }
+    : { to: '/login?mode=signup', label: t('ctaSignup') };
 
   return (
     <div className="relative overflow-hidden bg-camp-cream bg-topo">
@@ -127,15 +89,14 @@ export default function LandingPage() {
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           className="relative z-10 mx-auto max-w-3xl text-center"
         >
-          <MeritBadge label="AS" tone="#2f5d50" className="mx-auto h-24 w-24 drop-shadow-md" title="Ami Secret" />
-          <p className="label-hand mt-2 text-2xl -rotate-1">chut… c’est un secret</p>
+          <MeritBadge label={t('badge', { ns: 'auth' })} tone="#2f5d50" className="mx-auto h-24 w-24 drop-shadow-md" title={t('badgeTitle')} />
+          <p className="label-hand mt-2 text-2xl -rotate-1">{t('kicker')}</p>
 
           <h1 className="mt-4 font-display text-4xl font-black leading-tight text-camp-pine-dark sm:text-5xl">
-            Organise ton échange de cadeaux <span className="text-camp-ember">anonyme</span>, sans casse-tête
+            <Trans t={t} i18nKey="title" components={{ accent: <span className="text-camp-ember" /> }} />
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-camp-bark">
-            Ami Secret pige les noms, garde le mystère et anime ton échange du début à la fin :
-            préférences, messages anonymes, photos et rappels. Gratuit, en français, sans pub.
+            {t('intro')}
           </p>
 
           <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -144,19 +105,19 @@ export default function LandingPage() {
             </Link>
             {!user && (
               <Link to="/login" className="btn-ghost !px-6 !py-3">
-                J’ai déjà un compte
+                {t('ctaLogin')}
               </Link>
             )}
           </div>
 
           <ul className="mt-8 flex flex-wrap justify-center gap-2">
-            {AUDIENCES.map(({ icon: Icon, label }) => (
+            {AUDIENCES.map(({ icon: Icon, key }) => (
               <li
-                key={label}
+                key={key}
                 className="inline-flex items-center gap-1.5 rounded-full border-2 border-camp-bark/15 bg-white/60 px-3.5 py-1.5 text-sm font-bold text-camp-pine-dark"
               >
                 <Icon aria-hidden className="h-4 w-4 text-camp-pine" />
-                {label}
+                {t(`audiences.${key}`)}
               </li>
             ))}
           </ul>
@@ -166,15 +127,15 @@ export default function LandingPage() {
       {/* ── Comment ça marche ─────────────────────────────────── */}
       <section className="relative px-4 py-16" aria-labelledby="how-title">
         <div className="mx-auto max-w-5xl">
-          <p className="label-hand text-center text-2xl -rotate-1">aussi simple que ça</p>
+          <p className="label-hand text-center text-2xl -rotate-1">{t('how.kicker')}</p>
           <h2 id="how-title" className="text-center font-display text-3xl font-black text-camp-pine-dark">
-            Comment ça marche ?
+            {t('how.title')}
           </h2>
 
           <ol className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map(({ icon: Icon, title, text }, i) => (
+            {STEPS.map(({ icon: Icon, key }, i) => (
               <motion.li
-                key={title}
+                key={key}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-40px' }}
@@ -185,8 +146,8 @@ export default function LandingPage() {
                   {i + 1}
                 </span>
                 <Icon className="h-7 w-7 text-camp-pine" />
-                <h3 className="mt-3 font-display text-lg font-bold text-camp-pine-dark">{title}</h3>
-                <p className="mt-1.5 text-sm text-camp-bark">{text}</p>
+                <h3 className="mt-3 font-display text-lg font-bold text-camp-pine-dark">{t(`how.steps.${key}.title`)}</h3>
+                <p className="mt-1.5 text-sm text-camp-bark">{t(`how.steps.${key}.text`)}</p>
               </motion.li>
             ))}
           </ol>
@@ -196,13 +157,13 @@ export default function LandingPage() {
       {/* ── Captures d'écran ──────────────────────────────────── */}
       <section className="relative px-4 py-16" aria-labelledby="tour-title">
         <div className="mx-auto max-w-5xl">
-          <p className="label-hand text-center text-2xl rotate-1">jette un œil</p>
+          <p className="label-hand text-center text-2xl rotate-1">{t('tour.kicker')}</p>
           <h2 id="tour-title" className="text-center font-display text-3xl font-black text-camp-pine-dark">
-            L’app en un coup d’œil
+            {t('tour.title')}
           </h2>
 
           <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {SCREENSHOTS.map(({ src, alt, caption }, i) => (
+            {SCREENSHOTS.map(({ src, key }, i) => (
               <motion.figure
                 key={src}
                 initial={{ opacity: 0, y: 24 }}
@@ -210,9 +171,9 @@ export default function LandingPage() {
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ duration: 0.45, delay: i * 0.08 }}
               >
-                <PhoneFrame src={src} alt={alt} />
+                <PhoneFrame src={src} alt={t(`tour.shots.${key}.alt`)} />
                 <figcaption className="mt-3 text-center text-sm font-semibold text-camp-bark">
-                  {caption}
+                  {t(`tour.shots.${key}.caption`)}
                 </figcaption>
               </motion.figure>
             ))}
@@ -223,15 +184,15 @@ export default function LandingPage() {
       {/* ── Fonctionnalités ───────────────────────────────────── */}
       <section className="relative px-4 py-16" aria-labelledby="features-title">
         <div className="mx-auto max-w-5xl">
-          <p className="label-hand text-center text-2xl -rotate-1">tout est inclus</p>
+          <p className="label-hand text-center text-2xl -rotate-1">{t('features.kicker')}</p>
           <h2 id="features-title" className="text-center font-display text-3xl font-black text-camp-pine-dark">
-            Pensé pour que la magie opère
+            {t('features.title')}
           </h2>
 
           <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map(({ icon: Icon, title, text }, i) => (
+            {FEATURES.map(({ icon: Icon, key }, i) => (
               <motion.div
-                key={title}
+                key={key}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-40px' }}
@@ -241,8 +202,8 @@ export default function LandingPage() {
                 <span className="flex h-11 w-11 items-center justify-center rounded-full bg-camp-pine/10 text-camp-pine">
                   <Icon className="h-5 w-5" />
                 </span>
-                <h3 className="mt-3 font-display text-lg font-bold text-camp-pine-dark">{title}</h3>
-                <p className="mt-1.5 text-sm text-camp-bark">{text}</p>
+                <h3 className="mt-3 font-display text-lg font-bold text-camp-pine-dark">{t(`features.items.${key}.title`)}</h3>
+                <p className="mt-1.5 text-sm text-camp-bark">{t(`features.items.${key}.text`)}</p>
               </motion.div>
             ))}
           </div>
@@ -256,9 +217,7 @@ export default function LandingPage() {
             <ShieldCheck className="h-6 w-6" />
           </span>
           <p className="text-sm text-camp-bark">
-            <strong className="text-camp-pine-dark">Tes données restent les tiennes.</strong> Ami Secret est
-            gratuit, sans publicité et sans revente de données. Tu peux consulter, exporter ou supprimer
-            tes informations en tout temps, conformément à la Loi 25.
+            <Trans t={t} i18nKey="trust" components={{ strong: <strong className="text-camp-pine-dark" /> }} />
           </p>
         </div>
       </section>
@@ -268,10 +227,10 @@ export default function LandingPage() {
         <div className="relative z-10 mx-auto max-w-2xl">
           <Users className="mx-auto h-8 w-8 text-camp-ember" />
           <h2 className="mt-3 font-display text-3xl font-black text-camp-pine-dark">
-            Ton groupe mérite un échange mémorable
+            {t('final.title')}
           </h2>
           <p className="mt-3 text-camp-bark">
-            Deux minutes pour créer ta partie, un code à partager… et que la magie commence.
+            {t('final.text')}
           </p>
           <Link to={primaryCta.to} className="btn-primary mt-6 inline-flex !px-7 !py-3 text-lg">
             {primaryCta.label} <ArrowRight className="h-5 w-5" />

@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Link, useNavigate } from '@/i18n/router';
 import { motion } from 'motion/react';
 import { toast, ToastContainer } from 'react-toastify';
 import { Lock, Loader2, ShieldQuestion } from 'lucide-react';
@@ -8,6 +10,7 @@ import { ApiError } from '@/api/client';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function ResetPassword() {
+  const { t } = useTranslation('auth');
   const [params] = useSearchParams();
   const token = params.get('token') ?? '';
   const navigate = useNavigate();
@@ -18,19 +21,19 @@ export default function ResetPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) return toast.warning('Mot de passe trop court (min. 6 caractères).');
-    if (password !== confirm) return toast.warning('Les mots de passe ne correspondent pas.');
+    if (password.length < 6) return toast.warning(t('toasts.passwordTooShort'));
+    if (password !== confirm) return toast.warning(t('reset.mismatch'));
 
     setSubmitting(true);
     try {
       await authApi.resetPassword(token, password);
-      toast.success('Mot de passe réinitialisé. Vous pouvez vous connecter.');
+      toast.success(t('reset.success'));
       setTimeout(() => navigate('/', { replace: true }), 900);
     } catch (err) {
       if (err instanceof ApiError && err.status === 400) {
-        toast.error('Lien invalide ou expiré. Demandez-en un nouveau.');
+        toast.error(t('reset.invalidLink'));
       } else {
-        toast.error(err instanceof Error ? err.message : 'Une erreur est survenue.');
+        toast.error(err instanceof Error ? err.message : t('errors.generic', { ns: 'common' }));
       }
       setSubmitting(false);
     }
@@ -49,24 +52,24 @@ export default function ResetPassword() {
             <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-camp-berry/15 text-camp-berry">
               <ShieldQuestion className="h-7 w-7" />
             </span>
-            <h1 className="font-display text-2xl font-black text-camp-pine-dark">Lien incomplet</h1>
+            <h1 className="font-display text-2xl font-black text-camp-pine-dark">{t('reset.missingTitle')}</h1>
             <p className="mt-2 text-sm text-camp-bark">
-              Ce lien de réinitialisation est invalide. Demandez-en un nouveau.
+              {t('reset.missingBody')}
             </p>
             <Link to="/forgot-password" className="btn-primary mt-6 inline-flex">
-              Demander un lien
+              {t('reset.requestLink')}
             </Link>
           </div>
         ) : (
           <>
             <h1 className="font-display text-2xl font-black text-camp-pine-dark">
-              Nouveau mot de passe
+              {t('reset.title')}
             </h1>
-            <p className="mt-1 mb-6 text-sm text-camp-bark">Choisissez un nouveau mot de passe.</p>
+            <p className="mt-1 mb-6 text-sm text-camp-bark">{t('reset.intro')}</p>
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div>
                 <label htmlFor="password" className="field-label">
-                  Mot de passe
+                  {t('fields.password')}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-camp-bark/45" />
@@ -84,7 +87,7 @@ export default function ResetPassword() {
               </div>
               <div>
                 <label htmlFor="confirm" className="field-label">
-                  Confirmer le mot de passe
+                  {t('fields.confirmPassword')}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-camp-bark/45" />
@@ -101,7 +104,7 @@ export default function ResetPassword() {
                 </div>
               </div>
               <button type="submit" className="btn-primary w-full" disabled={submitting}>
-                {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Réinitialiser'}
+                {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : t('reset.submit')}
               </button>
             </form>
           </>

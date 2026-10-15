@@ -1,0 +1,62 @@
+/** Connexion, inscription et mot de passe oublié. */
+const auth = {
+  badge: 'AS',
+  badgeTitle: 'Insigne Ami Secret',
+  tagline: 'l’échange de cadeaux entre amis',
+  tabs: { login: 'Connexion', signup: 'Inscription' },
+  fields: {
+    firstName: 'Prénom',
+    firstNamePlaceholder: 'Ton prénom',
+    lastName: 'Nom',
+    lastNamePlaceholder: 'Ton nom',
+    campName: 'Nom de camp (optionnel)',
+    campNamePlaceholder: 'Ex : Castor',
+    campNameHint: 'S’il est renseigné, c’est lui qui sera affiché dans les parties.',
+    email: 'Courriel',
+    emailPlaceholder: 'exemple@courriel.com',
+    password: 'Mot de passe',
+    confirmPassword: 'Confirmer le mot de passe',
+  },
+  submit: {
+    login: 'Se connecter',
+    signup: 'Créer mon compte',
+    loggingIn: 'Connexion…',
+    signingUp: 'Création…',
+  },
+  forgotLink: 'Mot de passe oublié ?',
+  toasts: {
+    noContext: 'Erreur interne : contexte d’authentification indisponible',
+    required: 'Courriel et mot de passe sont requis.',
+    invalidEmail: 'Adresse courriel invalide.',
+    firstNameRequired: 'Le prénom est requis.',
+    lastNameRequired: 'Le nom est requis.',
+    passwordTooShort: 'Mot de passe trop court (min. 6 caractères).',
+    created: 'Compte créé.',
+    loggedIn: 'Connexion réussie.',
+    emailTaken: 'Ce courriel est déjà utilisé.',
+    badCredentials: 'Courriel ou mot de passe incorrect.',
+    authError: 'Erreur d’authentification.',
+  },
+  forgot: {
+    title: 'Mot de passe oublié',
+    intro: 'Entrez votre courriel : nous vous enverrons un lien pour choisir un nouveau mot de passe.',
+    submit: 'Envoyer le lien',
+    sentTitle: 'Vérifiez vos courriels',
+    sentBody:
+      'Si un compte existe pour cette adresse, un lien de réinitialisation vient d’être envoyé. Le lien expire dans 1 heure.',
+    backToLogin: 'Retour à la connexion',
+  },
+  reset: {
+    title: 'Nouveau mot de passe',
+    intro: 'Choisissez un nouveau mot de passe.',
+    submit: 'Réinitialiser',
+    mismatch: 'Les mots de passe ne correspondent pas.',
+    success: 'Mot de passe réinitialisé. Vous pouvez vous connecter.',
+    invalidLink: 'Lien invalide ou expiré. Demandez-en un nouveau.',
+    missingTitle: 'Lien incomplet',
+    missingBody: 'Ce lien de réinitialisation est invalide. Demandez-en un nouveau.',
+    requestLink: 'Demander un lien',
+  },
+};
+
+export default auth;

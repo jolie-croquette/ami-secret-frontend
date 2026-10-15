@@ -2,13 +2,17 @@ import { useState, useContext } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 import { AnimatePresence, motion } from 'motion/react';
 import { toast, ToastContainer } from 'react-toastify';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Link, useNavigate, useLang } from '@/i18n/router';
 import { Mail, Lock, User, Loader2, Tent } from 'lucide-react';
 import { ApiError } from '@/api/client';
 import { Pennants, MeritBadge, PineTree, CampScene } from '@/components/visuals/CampVisuals';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function AuthPage() {
+  const { t } = useTranslation('auth');
+  const lang = useLang();
   // `/login?mode=signup` ouvre directement l'onglet Inscription (CTA de l'accueil).
   const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(searchParams.get('mode') !== 'signup');
@@ -27,16 +31,16 @@ export default function AuthPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) return toast.error('Erreur interne : contexte d’authentification indisponible');
+    if (!auth) return toast.error(t('toasts.noContext'));
 
     const { firstName, lastName, campName, email, password } = form;
-    if (!email || !password) return toast.warning('Courriel et mot de passe sont requis.');
+    if (!email || !password) return toast.warning(t('toasts.required'));
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
-    if (!emailRegex.test(email)) return toast.warning('Adresse courriel invalide.');
-    if (!isLogin && !firstName.trim()) return toast.warning('Le prénom est requis.');
-    if (!isLogin && !lastName.trim()) return toast.warning('Le nom est requis.');
-    if (password.length < 6) return toast.warning('Mot de passe trop court (min. 6 caractères).');
+    if (!emailRegex.test(email)) return toast.warning(t('toasts.invalidEmail'));
+    if (!isLogin && !firstName.trim()) return toast.warning(t('toasts.firstNameRequired'));
+    if (!isLogin && !lastName.trim()) return toast.warning(t('toasts.lastNameRequired'));
+    if (password.length < 6) return toast.warning(t('toasts.passwordTooShort'));
 
     setIsSubmitting(true);
     try {
@@ -47,21 +51,22 @@ export default function AuthPage() {
           campName: campName.trim() || undefined,
           email,
           password,
+          locale: lang,
         });
-        toast.success('Compte créé.');
+        toast.success(t('toasts.created'));
         navigate('/onboard', { replace: true });
       } else {
         await auth.login(email, password);
-        toast.success('Connexion réussie.');
+        toast.success(t('toasts.loggedIn'));
         navigate('/dashboard', { replace: true });
       }
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
-        toast.error('Ce courriel est déjà utilisé.');
+        toast.error(t('toasts.emailTaken'));
       } else if (err instanceof ApiError && err.status === 401) {
-        toast.error('Courriel ou mot de passe incorrect.');
+        toast.error(t('toasts.badCredentials'));
       } else {
-        toast.error(err instanceof Error ? err.message : 'Erreur d’authentification.');
+        toast.error(err instanceof Error ? err.message : t('toasts.authError'));
       }
       setIsSubmitting(false);
     }
@@ -84,19 +89,19 @@ export default function AuthPage() {
       >
         <div className="flex flex-col items-center -mt-20 mb-4">
           <MeritBadge
-            label="AS"
+            label={t('badge')}
             tone="#2f5d50"
             className="w-28 h-28 drop-shadow-md animate-stamp-in"
-            title="Insigne Ami Secret"
+            title={t('badgeTitle')}
           />
-          <p className="label-hand text-2xl mt-1 -rotate-2">l’échange de cadeaux entre amis</p>
+          <p className="label-hand text-2xl mt-1 -rotate-2">{t('tagline')}</p>
         </div>
 
         {/* Sélecteur connexion / inscription */}
         <div className="relative grid grid-cols-2 gap-1 rounded-full bg-camp-sand/80 p-1 mb-7">
           {[
-            { login: true, label: 'Connexion' },
-            { login: false, label: 'Inscription' },
+            { login: true, label: t('tabs.login') },
+            { login: false, label: t('tabs.signup') },
           ].map(({ login, label }) => {
             const active = login === isLogin;
             return (
@@ -133,7 +138,7 @@ export default function AuthPage() {
               >
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="firstName" className="field-label">Prénom</label>
+                    <label htmlFor="firstName" className="field-label">{t('fields.firstName')}</label>
                     <div className="relative">
                       <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-camp-bark/45" />
                       <input
@@ -141,7 +146,7 @@ export default function AuthPage() {
                         type="text"
                         autoComplete="given-name"
                         className="field pl-11"
-                        placeholder="Ton prénom"
+                        placeholder={t('fields.firstNamePlaceholder')}
                         value={form.firstName}
                         onChange={(e) => setForm({ ...form, firstName: e.target.value })}
                         disabled={isSubmitting}
@@ -149,7 +154,7 @@ export default function AuthPage() {
                     </div>
                   </div>
                   <div>
-                    <label htmlFor="lastName" className="field-label">Nom</label>
+                    <label htmlFor="lastName" className="field-label">{t('fields.lastName')}</label>
                     <div className="relative">
                       <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-camp-bark/45" />
                       <input
@@ -157,7 +162,7 @@ export default function AuthPage() {
                         type="text"
                         autoComplete="family-name"
                         className="field pl-11"
-                        placeholder="Ton nom"
+                        placeholder={t('fields.lastNamePlaceholder')}
                         value={form.lastName}
                         onChange={(e) => setForm({ ...form, lastName: e.target.value })}
                         disabled={isSubmitting}
@@ -166,7 +171,7 @@ export default function AuthPage() {
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="campName" className="field-label">Nom de camp (optionnel)</label>
+                  <label htmlFor="campName" className="field-label">{t('fields.campName')}</label>
                   <div className="relative">
                     <Tent className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-camp-bark/45" />
                     <input
@@ -174,14 +179,14 @@ export default function AuthPage() {
                       type="text"
                       autoComplete="nickname"
                       className="field pl-11"
-                      placeholder="Ex : Castor"
+                      placeholder={t('fields.campNamePlaceholder')}
                       value={form.campName}
                       onChange={(e) => setForm({ ...form, campName: e.target.value })}
                       disabled={isSubmitting}
                     />
                   </div>
                   <p className="mt-1 text-xs text-camp-bark/70">
-                    S’il est renseigné, c’est lui qui sera affiché dans les parties.
+                    {t('fields.campNameHint')}
                   </p>
                 </div>
               </motion.div>
@@ -189,7 +194,7 @@ export default function AuthPage() {
           </AnimatePresence>
 
           <div>
-            <label htmlFor="email" className="field-label">Courriel</label>
+            <label htmlFor="email" className="field-label">{t('fields.email')}</label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-camp-bark/45" />
               <input
@@ -198,7 +203,7 @@ export default function AuthPage() {
                 inputMode="email"
                 autoComplete="email"
                 className="field pl-11"
-                placeholder="exemple@courriel.com"
+                placeholder={t('fields.emailPlaceholder')}
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 disabled={isSubmitting}
@@ -207,7 +212,7 @@ export default function AuthPage() {
           </div>
 
           <div>
-            <label htmlFor="password" className="field-label">Mot de passe</label>
+            <label htmlFor="password" className="field-label">{t('fields.password')}</label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-camp-bark/45" />
               <input
@@ -227,12 +232,12 @@ export default function AuthPage() {
             {isSubmitting ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
-                {isLogin ? 'Connexion…' : 'Création…'}
+                {isLogin ? t('submit.loggingIn') : t('submit.signingUp')}
               </>
             ) : isLogin ? (
-              'Se connecter'
+              t('submit.login')
             ) : (
-              'Créer mon compte'
+              t('submit.signup')
             )}
           </button>
 
@@ -242,7 +247,7 @@ export default function AuthPage() {
                 to="/forgot-password"
                 className="text-sm font-semibold text-camp-pine hover:underline"
               >
-                Mot de passe oublié ?
+                {t('forgotLink')}
               </Link>
             </p>
           )}

@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '@/context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@/i18n/router';
 import { motion } from 'motion/react';
 import { toast, ToastContainer } from 'react-toastify';
 import { Plus, LogIn, Loader2, LogOut, KeyRound, CalendarDays } from 'lucide-react';
@@ -10,13 +11,14 @@ import type { GameSummary, GameStatus } from '@/api/types';
 import { Tent, MeritBadge } from '@/components/visuals/CampVisuals';
 import 'react-toastify/dist/ReactToastify.css';
 
-const STATUS_META: Record<GameStatus, { label: string; classes: string }> = {
-  lobby: { label: 'En attente', classes: 'bg-camp-sun/30 text-camp-bark' },
-  drawn: { label: 'Tirage fait', classes: 'bg-camp-ember/20 text-camp-ember-dark' },
-  revealed: { label: 'Révélé', classes: 'bg-camp-pine/15 text-camp-pine-dark' },
+const STATUS_CLASSES: Record<GameStatus, string> = {
+  lobby: 'bg-camp-sun/30 text-camp-bark',
+  drawn: 'bg-camp-ember/20 text-camp-ember-dark',
+  revealed: 'bg-camp-pine/15 text-camp-pine-dark',
 };
 
 export default function Dashboard() {
+  const { t } = useTranslation('games');
   const { user, logout } = useContext(AuthContext) ?? ({} as never);
   const [games, setGames] = useState<GameSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +40,7 @@ export default function Dashboard() {
           navigate('/', { replace: true });
           return;
         }
-        if (active) setError(err instanceof Error ? err.message : 'Erreur inconnue');
+        if (active) setError(err instanceof Error ? err.message : t('dashboard.unknownError'));
       } finally {
         if (active) setLoading(false);
       }
@@ -49,13 +51,13 @@ export default function Dashboard() {
   }, [user, logout, navigate]);
 
   const leaveGame = async (gameId: string) => {
-    if (!window.confirm('Quitter cette partie ?')) return;
+    if (!window.confirm(t('dashboard.leaveConfirm'))) return;
     try {
       await gamesApi.leave(gameId);
       setGames((prev) => prev.filter((g) => g._id !== gameId));
-      toast.success('Tu as quitté la partie.');
+      toast.success(t('dashboard.left'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur lors de la sortie.');
+      toast.error(err instanceof Error ? err.message : t('dashboard.leaveError'));
     }
   };
 
@@ -63,16 +65,16 @@ export default function Dashboard() {
     <div className="min-h-screen bg-camp-cream bg-topo px-5 py-10 text-camp-ink">
       <div className="mx-auto max-w-6xl">
         <h1 className="mb-1 text-center font-display text-4xl font-black text-camp-pine-dark">
-          Bonjour, {user?.name}
+          {t('dashboard.hello', { name: user?.name })}
         </h1>
-        <p className="label-hand mb-8 text-center text-2xl">tes parties en cours</p>
+        <p className="label-hand mb-8 text-center text-2xl">{t('dashboard.subtitle')}</p>
 
         <div className="mb-8 flex flex-col justify-center gap-3 sm:flex-row">
           <button onClick={() => navigate('/game/join')} className="btn-ghost">
-            <LogIn className="h-5 w-5" /> Rejoindre une partie
+            <LogIn className="h-5 w-5" /> {t('dashboard.join')}
           </button>
           <button onClick={() => navigate('/game/create')} className="btn-primary">
-            <Plus className="h-5 w-5" /> Créer une partie
+            <Plus className="h-5 w-5" /> {t('dashboard.create')}
           </button>
         </div>
 
@@ -85,13 +87,13 @@ export default function Dashboard() {
         ) : games.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-12 text-center">
             <Tent className="w-24 opacity-90" />
-            <p className="font-display text-xl text-camp-pine-dark">Aucune partie pour l’instant</p>
-            <p className="text-sm text-camp-bark">Crée ta première partie ou rejoins celle d’un ami.</p>
+            <p className="font-display text-xl text-camp-pine-dark">{t('dashboard.emptyTitle')}</p>
+            <p className="text-sm text-camp-bark">{t('dashboard.emptyBody')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {games.map((game, i) => {
-              const status = STATUS_META[game.status] ?? STATUS_META.lobby;
+              const statusKey: GameStatus = game.status in STATUS_CLASSES ? game.status : 'lobby';
               const isAdmin = !!user && game.adminIds.includes(user.id);
               return (
                 <motion.div
@@ -106,16 +108,16 @@ export default function Dashboard() {
                 >
                   <div className="mb-3 flex items-start justify-between">
                     <MeritBadge label={game.name.charAt(0).toUpperCase()} className="h-12 w-12" />
-                    <span className={`badge-merit ${status.classes}`}>{status.label}</span>
+                    <span className={`badge-merit ${STATUS_CLASSES[statusKey]}`}>{t(`status.${statusKey}`)}</span>
                   </div>
                   <h2 className="mb-2 truncate font-display text-xl font-bold text-camp-pine-dark">
                     {game.name}
                   </h2>
                   <p className="flex items-center gap-2 text-sm text-camp-bark">
-                    <KeyRound className="h-4 w-4" /> Code&nbsp;: <span className="font-bold tracking-wider">{game.code}</span>
+                    <KeyRound className="h-4 w-4" /> {t('dashboard.code')} <span className="font-bold tracking-wider">{game.code}</span>
                   </p>
                   <p className="flex items-center gap-2 text-sm text-camp-bark">
-                    <CalendarDays className="h-4 w-4" /> {game.numberOfWeeks} semaines
+                    <CalendarDays className="h-4 w-4" /> {t('dashboard.weeks', { count: game.numberOfWeeks })}
                   </p>
 
                   {!isAdmin && (
@@ -126,7 +128,7 @@ export default function Dashboard() {
                       }}
                       className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-camp-berry/10 px-3 py-1 text-xs font-bold text-camp-berry hover:bg-camp-berry/20"
                     >
-                      <LogOut className="h-3.5 w-3.5" /> Quitter
+                      <LogOut className="h-3.5 w-3.5" /> {t('dashboard.leave')}
                     </button>
                   )}
                 </motion.div>
