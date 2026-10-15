@@ -1,5 +1,7 @@
 // router.tsx
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, type RouteObject } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Link, Navigate } from '@/i18n/router';
 import { lazy } from 'react';
 import { Suspense, type ReactNode, type ReactElement } from 'react';
 import Layout from '@/pages/layout/Layout';
@@ -32,135 +34,152 @@ const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
 const TermsOfUse = lazy(() => import('@/pages/TermsOfUse'));
 const SharePhoto = lazy(() => import('@/pages/SharePhoto'));
 
-const NotFound = () => (
-  <div className="min-h-screen flex items-center justify-center bg-camp-cream bg-topo text-center p-8">
-    <div className="card-sign p-10 max-w-md">
-      <h1 className="font-display text-4xl font-black text-camp-pine-dark mb-2">Page introuvable</h1>
-      <p className="text-camp-bark mb-6">Le lien est peut-être expiré ou l'adresse incorrecte.</p>
-      <a href="/dashboard" className="btn-primary inline-flex">Retour au tableau de bord</a>
+const NotFound = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-camp-cream bg-topo text-center p-8">
+      <div className="card-sign p-10 max-w-md">
+        <h1 className="font-display text-4xl font-black text-camp-pine-dark mb-2">{t('notFound.title')}</h1>
+        <p className="text-camp-bark mb-6">{t('notFound.body')}</p>
+        <Link to="/dashboard" className="btn-primary inline-flex">{t('notFound.cta')}</Link>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const withSuspense = (el: ReactNode): ReactElement => (
   <Suspense fallback={<CampLoader />}>{el}</Suspense>
 )
+
+/**
+ * Pages côté joueur, déclarées une seule fois puis montées deux fois :
+ * à la racine (français) et sous `/en` (anglais).
+ */
+const appRoutes: RouteObject[] = [
+  // page d'accueil publique (promotion de l'app)
+  {
+    index: true,
+    element: withSuspense(<LandingPage />),
+  },
+
+  // connexion / inscription
+  {
+    path: 'login',
+    element: withSuspense(
+      <RequireNoAuth>
+        <AuthPage />
+      </RequireNoAuth>
+    )
+  },
+
+  {
+    path: 'profile',
+    element: withSuspense(
+      <RequireAuth>
+        <PlayerProfilePage />
+      </RequireAuth>
+    )
+  },
+
+  // onboarding préférences
+  {
+    path: 'onboard',
+    element: withSuspense(
+      <RequireAuth>
+        <PreferencesPage />
+      </RequireAuth>
+    ),
+  },
+
+  // dashboard
+  {
+    path: 'dashboard',
+    element: withSuspense(
+      <RequireAuth>
+        <Dashboard />
+      </RequireAuth>
+    ),
+  },
+
+  // game
+  {
+    path: 'game/create',
+    element: withSuspense(
+      <RequireAuth>
+        <CreateGame />
+      </RequireAuth>
+    ),
+  },
+  {
+    // principal (emails): /game/join?code=ABC123
+    path: 'game/join',
+    element: withSuspense(
+      <RequireAuth>
+        <JoinGamePage />
+      </RequireAuth>
+    ),
+  },
+  {
+    // alias: /game/join/ABC123
+    path: 'game/join/:code',
+    element: withSuspense(
+      <RequireAuth>
+        <JoinGamePage />
+      </RequireAuth>
+    ),
+  },
+
+  // lobby
+  {
+    path: 'lobby/:code/admin',
+    element: withSuspense(
+      <RequireAuth>
+        <LobbyAdminPage />
+      </RequireAuth>
+    ),
+  },
+
+  {
+    path: 'lobby/:code',
+    element: withSuspense(
+      <RequireAuth>
+        <PlayerLobby />
+      </RequireAuth>
+    ),
+  },
+
+  // mot de passe (public)
+  { path: 'forgot-password', element: withSuspense(<ForgotPassword />) },
+  { path: 'reset-password', element: withSuspense(<ResetPassword />) },
+
+  // pages légales (publiques)
+  { path: 'privacy', element: withSuspense(<PrivacyPolicy />) },
+  { path: 'terms', element: withSuspense(<TermsOfUse />) },
+
+  // PWA share target
+  {
+    path: 'share-photo',
+    element: withSuspense(
+      <RequireAuth>
+        <SharePhoto />
+      </RequireAuth>
+    ),
+  },
+
+  // redirects utiles
+  { path: 'home', element: <Navigate to="/dashboard" replace /> },
+
+  // 404
+  { path: '*', element: <NotFound /> },
+];
 
 export const router = createBrowserRouter([
   {
     // Un SEUL Layout pour toute l'app
     element: <Layout />,
     children: [
-      // page d'accueil publique (promotion de l'app)
-      {
-        index: true,
-        path: '/',
-        element: withSuspense(<LandingPage />),
-      },
-
-      // connexion / inscription
-      {
-        path: '/login',
-        element: withSuspense(
-          <RequireNoAuth>
-            <AuthPage />
-          </RequireNoAuth>
-        )
-      },
-
-      {
-        path: '/profile',
-        element: withSuspense(
-          <RequireAuth>
-            <PlayerProfilePage />
-          </RequireAuth>
-        )
-      },
-
-      // onboarding préférences
-      {
-        path: '/onboard',
-        element: withSuspense(
-          <RequireAuth>
-            <PreferencesPage />
-          </RequireAuth>
-        ),
-      },
-
-      // dashboard
-      {
-        path: '/dashboard',
-        element: withSuspense(
-          <RequireAuth>
-            <Dashboard />
-          </RequireAuth>
-        ),
-      },
-
-      // game
-      {
-        path: '/game/create',
-        element: withSuspense(
-          <RequireAuth>
-            <CreateGame />
-          </RequireAuth>
-        ),
-      },
-      {
-        // principal (emails): /game/join?code=ABC123
-        path: '/game/join',
-        element: withSuspense(
-          <RequireAuth>
-            <JoinGamePage />
-          </RequireAuth>
-        ),
-      },
-      {
-        // alias: /game/join/ABC123
-        path: '/game/join/:code',
-        element: withSuspense(
-          <RequireAuth>
-            <JoinGamePage />
-          </RequireAuth>
-        ),
-      },
-
-      // lobby
-      {
-        path: '/lobby/:code/admin',
-        element: withSuspense(
-          <RequireAuth>
-            <LobbyAdminPage />
-          </RequireAuth>
-        ),
-      },
-
-      {
-        path: '/lobby/:code',
-        element: withSuspense(
-          <RequireAuth>
-            <PlayerLobby />
-          </RequireAuth>
-        ),
-      },
-
-      // mot de passe (public)
-      { path: '/forgot-password', element: withSuspense(<ForgotPassword />) },
-      { path: '/reset-password', element: withSuspense(<ResetPassword />) },
-
-      // pages légales (publiques)
-      { path: '/privacy', element: withSuspense(<PrivacyPolicy />) },
-      { path: '/terms', element: withSuspense(<TermsOfUse />) },
-
-      // PWA share target
-      {
-        path: '/share-photo',
-        element: withSuspense(
-          <RequireAuth>
-            <SharePhoto />
-          </RequireAuth>
-        ),
-      },
+      { path: '/', children: appRoutes },
+      { path: '/en', children: appRoutes },
 
       // espace administrateur
       {
@@ -182,11 +201,6 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // redirects utiles
-      { path: '/home', element: <Navigate to="/dashboard" replace /> },
-
-      // 404
-      { path: '*', element: <NotFound /> },
     ],
   },
 ]);

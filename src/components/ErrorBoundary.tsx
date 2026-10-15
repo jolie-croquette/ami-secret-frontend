@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react';
+import i18n from '@/i18n';
 
 interface State {
   hasError: boolean;
@@ -26,10 +27,10 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
       return (
         <div className="grid min-h-screen place-items-center bg-camp-cream bg-topo p-6 text-center">
           <div className="card-sign max-w-md p-10">
-            <h1 className="mb-2 font-display text-3xl font-black text-camp-berry">Une erreur est survenue</h1>
-            <p className="mb-6 text-camp-bark">Le camp a rencontré un pépin. Recharge la page pour réessayer.</p>
+            <h1 className="mb-2 font-display text-3xl font-black text-camp-berry">{i18n.t('errorBoundary.title')}</h1>
+            <p className="mb-6 text-camp-bark">{i18n.t('errorBoundary.body')}</p>
             <button onClick={() => window.location.reload()} className="btn-primary inline-flex">
-              Recharger
+              {i18n.t('errorBoundary.reload')}
             </button>
           </div>
         </div>

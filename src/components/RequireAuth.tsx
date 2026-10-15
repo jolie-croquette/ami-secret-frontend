@@ -1,6 +1,8 @@
 import React, { useContext } from 'react';
 import { AuthContext } from '@/context/AuthContext';
-import { Navigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { Navigate } from '@/i18n/router';
+import { stripLang } from '@/i18n/lang';
 
 export default function RequireAuth({ children }: { children: React.ReactElement }) {
   const auth = useContext(AuthContext);
@@ -11,7 +13,7 @@ export default function RequireAuth({ children }: { children: React.ReactElement
   }
 
   // Tant que le profil de préférences n'est pas complété, on force le wizard.
-  if (!auth.user.onBoarded && location.pathname !== '/onboard') {
+  if (!auth.user.onBoarded && stripLang(location.pathname) !== '/onboard') {
     return <Navigate to="/onboard" replace />;
   }
 

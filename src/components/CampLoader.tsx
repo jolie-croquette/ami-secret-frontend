@@ -1,11 +1,13 @@
+import { useTranslation } from 'react-i18next';
 import { Campfire } from '@/components/visuals/CampVisuals';
 
 /** Écran de chargement plein écran, thématisé feu de camp. */
-export function CampLoader({ label = 'Chargement…' }: { label?: string }) {
+export function CampLoader({ label }: { label?: string }) {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-5 bg-camp-cream bg-topo">
-      <Campfire className="w-24 h-24" title="Chargement" />
-      <p className="font-hand text-2xl text-camp-ember-dark animate-float">{label}</p>
+      <Campfire className="w-24 h-24" title={t('loading')} />
+      <p className="font-hand text-2xl text-camp-ember-dark animate-float">{label ?? t('loading')}</p>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { AlertTriangle, Loader2, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmModalProps {
   open: boolean;
@@ -21,14 +22,15 @@ export default function ConfirmModal({
   open,
   title,
   message,
-  confirmLabel = 'Confirmer',
-  cancelLabel = 'Annuler',
+  confirmLabel,
+  cancelLabel,
   tone = 'default',
   loading = false,
   onConfirm,
   onCancel,
   children,
 }: ConfirmModalProps) {
+  const { t } = useTranslation();
   return (
     <AnimatePresence>
       {open && (
@@ -55,7 +57,7 @@ export default function ConfirmModal({
               type="button"
               onClick={onCancel}
               disabled={loading}
-              aria-label="Fermer"
+              aria-label={t('actions.close')}
               className="absolute right-4 top-4 text-camp-bark/50 transition hover:text-camp-ink"
             >
               <X className="h-5 w-5" />
@@ -77,7 +79,7 @@ export default function ConfirmModal({
 
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button type="button" className="btn-ghost" onClick={onCancel} disabled={loading}>
-                {cancelLabel}
+                {cancelLabel ?? t('actions.cancel')}
               </button>
               <button
                 type="button"
@@ -85,7 +87,7 @@ export default function ConfirmModal({
                 onClick={onConfirm}
                 disabled={loading}
               >
-                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : confirmLabel}
+                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : confirmLabel ?? t('actions.confirm')}
               </button>
             </div>
           </motion.div>

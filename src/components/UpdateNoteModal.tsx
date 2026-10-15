@@ -3,13 +3,17 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Sparkles, Check, X, Smartphone } from 'lucide-react';
 import { AuthContext } from '@/context/AuthContext';
 import { userApi } from '@/api/user';
-import { UPDATE_NOTE, PWA_INSTALL_INSTRUCTIONS } from '@/content/updateNote';
+import { useTranslation } from 'react-i18next';
+import { UPDATE_NOTE_VERSION, getUpdateNote, getInstallInstructions } from '@/content/updateNote';
 
 /**
  * Affiche la note de mise à jour une seule fois par utilisateur (suivi en base
  * via `lastSeenUpdate`). Monté dans le Layout : visible sur toute page connectée.
  */
 export default function UpdateNoteModal() {
+  const { t, i18n } = useTranslation();
+  const UPDATE_NOTE = getUpdateNote(i18n.language);
+  const PWA_INSTALL_INSTRUCTIONS = getInstallInstructions(i18n.language);
   const auth = useContext(AuthContext);
   const user = auth?.user;
   const [open, setOpen] = useState(false);
@@ -17,14 +21,14 @@ export default function UpdateNoteModal() {
 
   useEffect(() => {
     // On n'affiche qu'une fois le profil complété, pour ne pas chevaucher le wizard.
-    if (user && user.onBoarded && user.lastSeenUpdate !== UPDATE_NOTE.version) setOpen(true);
+    if (user && user.onBoarded && user.lastSeenUpdate !== UPDATE_NOTE_VERSION) setOpen(true);
     else setOpen(false);
   }, [user]);
 
   const dismiss = async () => {
     setDismissing(true);
     try {
-      await userApi.seenUpdate(UPDATE_NOTE.version);
+      await userApi.seenUpdate(UPDATE_NOTE_VERSION);
       await auth?.refresh();
     } catch {
       /* on ferme quand même : pas bloquant */
@@ -60,7 +64,7 @@ export default function UpdateNoteModal() {
               type="button"
               onClick={() => void dismiss()}
               disabled={dismissing}
-              aria-label="Fermer"
+              aria-label={t('actions.close')}
               className="absolute right-4 top-4 text-camp-bark/50 transition hover:text-camp-ink"
             >
               <X className="h-5 w-5" />
@@ -89,12 +93,12 @@ export default function UpdateNoteModal() {
 
             <details className="mb-6 rounded-2xl border-2 border-camp-bark/15 bg-white/50 p-4">
               <summary className="flex cursor-pointer items-center gap-2 font-display text-sm font-bold text-camp-pine-dark">
-                <Smartphone className="h-4 w-4" /> Comment l’installer sur ton téléphone ?
+                <Smartphone className="h-4 w-4" /> {t('updateNote.installTitle')}
               </summary>
               <div className="mt-3 grid gap-4 sm:grid-cols-2">
                 <div>
                   <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-camp-bark/70">
-                    iPhone (Safari)
+                    {t('updateNote.iphone')}
                   </p>
                   <ol className="list-decimal space-y-1 pl-4 text-sm text-camp-ink">
                     {PWA_INSTALL_INSTRUCTIONS.ios.map((step, i) => (
@@ -104,7 +108,7 @@ export default function UpdateNoteModal() {
                 </div>
                 <div>
                   <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-camp-bark/70">
-                    Android (Chrome)
+                    {t('updateNote.android')}
                   </p>
                   <ol className="list-decimal space-y-1 pl-4 text-sm text-camp-ink">
                     {PWA_INSTALL_INSTRUCTIONS.android.map((step, i) => (
@@ -121,7 +125,7 @@ export default function UpdateNoteModal() {
               disabled={dismissing}
               className="btn-primary w-full"
             >
-              Compris, merci !
+              {t('updateNote.gotIt')}
             </button>
           </motion.div>
         </motion.div>

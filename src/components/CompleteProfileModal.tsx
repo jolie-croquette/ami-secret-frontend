@@ -4,6 +4,7 @@ import { UserRound, Tent, Loader2, ShieldCheck } from 'lucide-react';
 import { AuthContext } from '@/context/AuthContext';
 import { userApi } from '@/api/user';
 import { hasCompleteIdentity } from '@/lib/identity';
+import { Trans, useTranslation } from 'react-i18next';
 
 /**
  * Modale bloquante affichée aux utilisateurs dont le compte n'a pas encore
@@ -12,6 +13,7 @@ import { hasCompleteIdentity } from '@/lib/identity';
  * l'intégrité des données et l'affichage des noms dans les parties.
  */
 export default function CompleteProfileModal() {
+  const { t } = useTranslation('components', { keyPrefix: 'completeProfile' });
   const auth = useContext(AuthContext);
   const user = auth?.user;
 
@@ -35,8 +37,8 @@ export default function CompleteProfileModal() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName.trim()) return setError('Le prénom est requis.');
-    if (!lastName.trim()) return setError('Le nom est requis.');
+    if (!firstName.trim()) return setError(t('firstNameRequired'));
+    if (!lastName.trim()) return setError(t('lastNameRequired'));
     setError('');
     setSaving(true);
     try {
@@ -48,7 +50,7 @@ export default function CompleteProfileModal() {
       // La modale se ferme d'elle-même : l'identité devient complète au refresh.
       await auth?.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur de sauvegarde. Réessaie.');
+      setError(err instanceof Error ? err.message : t('saveError'));
       setSaving(false);
     }
   };
@@ -67,7 +69,7 @@ export default function CompleteProfileModal() {
           <motion.div
             role="dialog"
             aria-modal="true"
-            aria-label="Complète ton profil"
+            aria-label={t('title')}
             initial={{ opacity: 0, y: 16, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
@@ -79,31 +81,29 @@ export default function CompleteProfileModal() {
                 <ShieldCheck className="h-5 w-5" />
               </span>
               <h2 className="font-display text-xl font-black text-camp-pine-dark">
-                Complète ton profil
+                {t('title')}
               </h2>
             </div>
 
             <p className="mb-2 text-sm text-camp-ink">
-              L’app affiche maintenant les joueurs par leur <strong>nom de camp</strong> (ou leur
-              prénom) dans les parties. Pour que tout le monde te reconnaisse et que tes parties
-              s’affichent correctement, ton prénom et ton nom sont désormais requis.
+              <Trans t={t} i18nKey="intro" components={{ strong: <strong /> }} />
             </p>
             <p className="mb-5 text-xs text-camp-bark">
-              Cette étape est obligatoire et ne te sera demandée qu’une seule fois.
+              {t('onceOnly')}
             </p>
 
             <form onSubmit={(e) => void submit(e)} className="space-y-4" noValidate>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="cp-firstName" className="field-label flex items-center gap-2">
-                    <UserRound className="h-4 w-4 text-camp-pine" /> Prénom
+                    <UserRound className="h-4 w-4 text-camp-pine" /> {t('firstName')}
                   </label>
                   <input
                     id="cp-firstName"
                     type="text"
                     autoComplete="given-name"
                     className="field"
-                    placeholder="Ton prénom"
+                    placeholder={t('firstNamePlaceholder')}
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     disabled={saving}
@@ -111,14 +111,14 @@ export default function CompleteProfileModal() {
                 </div>
                 <div>
                   <label htmlFor="cp-lastName" className="field-label flex items-center gap-2">
-                    <UserRound className="h-4 w-4 text-camp-pine" /> Nom
+                    <UserRound className="h-4 w-4 text-camp-pine" /> {t('lastName')}
                   </label>
                   <input
                     id="cp-lastName"
                     type="text"
                     autoComplete="family-name"
                     className="field"
-                    placeholder="Ton nom"
+                    placeholder={t('lastNamePlaceholder')}
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     disabled={saving}
@@ -127,20 +127,20 @@ export default function CompleteProfileModal() {
               </div>
               <div>
                 <label htmlFor="cp-campName" className="field-label flex items-center gap-2">
-                  <Tent className="h-4 w-4 text-camp-pine" /> Nom de camp (optionnel)
+                  <Tent className="h-4 w-4 text-camp-pine" /> {t('campName')}
                 </label>
                 <input
                   id="cp-campName"
                   type="text"
                   autoComplete="nickname"
                   className="field"
-                  placeholder="Ex : Castor"
+                  placeholder={t('campNamePlaceholder')}
                   value={campName}
                   onChange={(e) => setCampName(e.target.value)}
                   disabled={saving}
                 />
                 <p className="mt-1 text-xs text-camp-bark">
-                  S’il est renseigné, c’est lui qui sera affiché dans les parties.
+                  {t('campNameHint')}
                 </p>
               </div>
 
@@ -151,7 +151,7 @@ export default function CompleteProfileModal() {
               )}
 
               <button type="submit" className="btn-primary w-full" disabled={saving}>
-                {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Enregistrer et continuer'}
+                {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : t('submit')}
               </button>
             </form>
           </motion.div>

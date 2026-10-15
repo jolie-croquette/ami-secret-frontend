@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Download, X, ChevronDown } from 'lucide-react';
 import { isMobileDevice, isStandalone, isIos, canPromptInstall, promptInstall } from '@/lib/pwa';
-import { PWA_INSTALL_INSTRUCTIONS } from '@/content/updateNote';
+import { useTranslation } from 'react-i18next';
+import { getInstallInstructions } from '@/content/updateNote';
 
 /**
  * Bannière d'installation PWA, proposée à chaque connexion / rechargement de
@@ -10,6 +11,7 @@ import { PWA_INSTALL_INSTRUCTIONS } from '@/content/updateNote';
  * Jamais affichée sur ordinateur ni dans l'app installée.
  */
 export default function InstallPrompt() {
+  const { t, i18n } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [showSteps, setShowSteps] = useState(false);
 
@@ -37,9 +39,9 @@ export default function InstallPrompt() {
       <div className="flex items-start gap-3 p-4">
         <img src="/icon-192.png" alt="" className="h-12 w-12 flex-shrink-0 rounded-xl" />
         <div className="flex-1 min-w-0">
-          <p className="font-display font-bold text-camp-pine-dark text-sm">Installer l'app</p>
+          <p className="font-display font-bold text-camp-pine-dark text-sm">{t('install.title')}</p>
           <p className="text-xs text-camp-bark mt-0.5">
-            Accède à Ami Secret directement depuis ton écran d'accueil.
+            {t('install.body')}
           </p>
           <button
             type="button"
@@ -47,7 +49,7 @@ export default function InstallPrompt() {
             className="mt-2 flex items-center gap-1.5 rounded-lg bg-camp-pine px-3 py-1.5 text-xs font-bold text-camp-cream"
           >
             <Download className="h-3.5 w-3.5" />
-            Installer
+            {t('install.cta')}
             {!canPromptInstall() && (
               <ChevronDown
                 className={`h-3.5 w-3.5 transition-transform ${showSteps ? 'rotate-180' : ''}`}
@@ -58,7 +60,7 @@ export default function InstallPrompt() {
         <button
           type="button"
           onClick={() => setVisible(false)}
-          aria-label="Fermer"
+          aria-label={t('actions.close')}
           className="flex-shrink-0 text-camp-bark/50 hover:text-camp-ink"
         >
           <X className="h-5 w-5" />
@@ -67,7 +69,7 @@ export default function InstallPrompt() {
 
       {showSteps && (
         <ol className="mx-4 mb-4 list-decimal space-y-1 rounded-xl bg-white/60 p-3 pl-8 text-xs text-camp-ink">
-          {(isIos() ? PWA_INSTALL_INSTRUCTIONS.ios : PWA_INSTALL_INSTRUCTIONS.android).map(
+          {getInstallInstructions(i18n.language)[isIos() ? 'ios' : 'android'].map(
             (line, i) => (
               <li key={i}>{line}</li>
             )

@@ -1,5 +1,6 @@
 import { api } from './client';
 import type { AuthUser } from './types';
+import type { Lang } from '@/i18n/lang';
 
 export interface SignupPayload {
   firstName: string;
@@ -7,6 +8,8 @@ export interface SignupPayload {
   campName?: string;
   email: string;
   password: string;
+  /** Langue d'inscription (courriels, notifications). */
+  locale?: Lang;
 }
 
 export const authApi = {

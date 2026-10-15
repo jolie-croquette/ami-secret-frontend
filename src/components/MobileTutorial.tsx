@@ -13,7 +13,8 @@ import {
 import { AuthContext } from '@/context/AuthContext';
 import { isMobileDevice, isStandalone, isIos, canPromptInstall, promptInstall } from '@/lib/pwa';
 import { hasCompleteIdentity } from '@/lib/identity';
-import { PWA_INSTALL_INSTRUCTIONS } from '@/content/updateNote';
+import { useTranslation } from 'react-i18next';
+import { getInstallInstructions } from '@/content/updateNote';
 
 /** Le tutoriel ne s'affiche automatiquement qu'une seule fois par appareil. */
 const TUTORIAL_DONE_KEY = 'ami-secret:mobile-tutorial-done';
@@ -21,44 +22,13 @@ const TUTORIAL_DONE_KEY = 'ami-secret:mobile-tutorial-done';
 /** Événement global pour rouvrir le tutoriel (bouton « Aide » du header). */
 export const OPEN_TUTORIAL_EVENT = 'ami-secret:open-tutorial';
 
-interface Step {
-  icon: typeof Tent;
-  title: string;
-  body: string[];
-}
+type StepKey = 'welcome' | 'friend' | 'messages' | 'install';
 
-const STEPS: Step[] = [
-  {
-    icon: Tent,
-    title: 'Bienvenue au camp !',
-    body: [
-      'Ton tableau de bord regroupe toutes tes parties d’ami secret.',
-      'Rejoins une partie avec le code à 6 lettres fourni par l’organisateur, ou crée la tienne.',
-    ],
-  },
-  {
-    icon: Gift,
-    title: 'Ton ami secret',
-    body: [
-      'Après le tirage, découvre à qui tu offres des cadeaux. Chut, c’est secret !',
-      'Remplis tes préférences (j’aime, allergies, liste de souhaits) pour aider ton propre ami secret.',
-    ],
-  },
-  {
-    icon: MessageSquareHeart,
-    title: 'Messages et photos',
-    body: [
-      'Écris des messages anonymes à ton ami secret directement dans la partie.',
-      'Partage une photo quand tu reçois un cadeau : tout le camp en profite !',
-    ],
-  },
-  {
-    icon: Smartphone,
-    title: 'Installe l’app !',
-    body: [
-      'Ajoute Ami Secret à ton écran d’accueil pour l’ouvrir comme une vraie application et recevoir les notifications.',
-    ],
-  },
+const STEPS: Array<{ key: StepKey; icon: typeof Tent }> = [
+  { key: 'welcome', icon: Tent },
+  { key: 'friend', icon: Gift },
+  { key: 'messages', icon: MessageSquareHeart },
+  { key: 'install', icon: Smartphone },
 ];
 
 /**
@@ -68,6 +38,7 @@ const STEPS: Step[] = [
  * Monté dans le Layout.
  */
 export default function MobileTutorial() {
+  const { t, i18n } = useTranslation('components');
   const auth = useContext(AuthContext);
   const user = auth?.user;
   const [open, setOpen] = useState(false);
@@ -116,6 +87,8 @@ export default function MobileTutorial() {
   const isLast = step === steps.length - 1;
   const current = steps[step];
   const Icon = current.icon;
+  const title = t(`tutorial.steps.${current.key}.title`);
+  const body = t(`tutorial.steps.${current.key}.body`, { returnObjects: true });
   const showInstall = !isStandalone() && isLast;
 
   return (
@@ -130,7 +103,7 @@ export default function MobileTutorial() {
         <motion.div
           role="dialog"
           aria-modal="true"
-          aria-label="Tutoriel Ami Secret"
+          aria-label={t('tutorial.dialogLabel')}
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 32 }}
@@ -140,7 +113,7 @@ export default function MobileTutorial() {
           <button
             type="button"
             onClick={close}
-            aria-label="Passer le tutoriel"
+            aria-label={t('tutorial.skipLabel')}
             className="absolute right-4 top-4 text-camp-bark/50 transition hover:text-camp-ink"
           >
             <X className="h-5 w-5" />
@@ -162,11 +135,11 @@ export default function MobileTutorial() {
             <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-camp-pine/10 text-camp-pine">
               <Icon className="h-7 w-7" />
             </span>
-            <h2 className="font-display text-2xl font-black text-camp-pine-dark">{current.title}</h2>
+            <h2 className="font-display text-2xl font-black text-camp-pine-dark">{title}</h2>
           </div>
 
           <div className="mb-6 space-y-2.5">
-            {current.body.map((line, i) => (
+            {body.map((line, i) => (
               <p key={i} className="text-center text-sm text-camp-ink">
                 {line}
               </p>
@@ -181,11 +154,11 @@ export default function MobileTutorial() {
                   className="btn-primary mx-auto !mt-4 flex items-center gap-2"
                 >
                   <Download className="h-4 w-4" />
-                  Installer l’application
+                  {t('tutorial.installCta')}
                 </button>
               ) : (
                 <ol className="!mt-4 list-decimal space-y-1 rounded-2xl border-2 border-camp-bark/15 bg-white/50 p-4 pl-8 text-left text-sm text-camp-ink">
-                  {(isIos() ? PWA_INSTALL_INSTRUCTIONS.ios : PWA_INSTALL_INSTRUCTIONS.android).map(
+                  {getInstallInstructions(i18n.language)[isIos() ? 'ios' : 'android'].map(
                     (line, i) => (
                       <li key={i}>{line}</li>
                     )
@@ -197,16 +170,16 @@ export default function MobileTutorial() {
           <div className="flex items-center justify-between gap-3">
             {step > 0 ? (
               <button type="button" onClick={() => setStep((s) => s - 1)} className="btn-ghost">
-                <ChevronLeft className="h-4 w-4" /> Retour
+                <ChevronLeft className="h-4 w-4" /> {t('tutorial.back')}
               </button>
             ) : (
               <button type="button" onClick={close} className="btn-ghost text-camp-bark/70">
-                Passer
+                {t('tutorial.skip')}
               </button>
             )}
             {isLast ? (
               <button type="button" onClick={close} className="btn-primary flex-1">
-                C’est parti !
+                {t('tutorial.done')}
               </button>
             ) : (
               <button
@@ -214,7 +187,7 @@ export default function MobileTutorial() {
                 onClick={() => setStep((s) => s + 1)}
                 className="btn-primary flex-1"
               >
-                Suivant <ChevronRight className="h-4 w-4" />
+                {t('tutorial.next')} <ChevronRight className="h-4 w-4" />
               </button>
             )}
           </div>

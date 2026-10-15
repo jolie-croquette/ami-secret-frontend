@@ -1,5 +1,7 @@
 import { useContext, useRef, useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Link, useNavigate } from '@/i18n/router';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { AuthContext } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { TreePine, UserRound, LayoutGrid, LogIn, Plus, LogOut, ChevronDown, ShieldCheck, CircleHelp } from 'lucide-react';
@@ -17,6 +19,7 @@ function capitalizeWords(s?: string) {
 }
 
 export default function Header() {
+  const { t } = useTranslation();
   const auth = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -44,7 +47,7 @@ export default function Header() {
     };
   }, []);
 
-  const userName = capitalizeWords(auth?.user?.name) || 'Mon compte';
+  const userName = capitalizeWords(auth?.user?.name) || t('nav.myAccount');
   const initials = (auth?.user?.name || 'AS')
     .split(/\s+/)
     .map((w) => w.charAt(0).toUpperCase())
@@ -52,11 +55,11 @@ export default function Header() {
     .join('');
 
   const menuItems = [
-    { to: '/profile', icon: UserRound, label: 'Mon profil' },
-    { to: '/dashboard', icon: LayoutGrid, label: 'Mes parties' },
-    { to: '/game/join', icon: LogIn, label: 'Rejoindre une partie' },
-    { to: '/game/create', icon: Plus, label: 'Créer une partie' },
-    ...(auth?.isAdmin ? [{ to: '/admin', icon: ShieldCheck, label: 'Espace admin' }] : []),
+    { to: '/profile', icon: UserRound, label: t('nav.profile') },
+    { to: '/dashboard', icon: LayoutGrid, label: t('nav.games') },
+    { to: '/game/join', icon: LogIn, label: t('nav.joinGame') },
+    { to: '/game/create', icon: Plus, label: t('nav.createGame') },
+    ...(auth?.isAdmin ? [{ to: '/admin', icon: ShieldCheck, label: t('nav.admin') }] : []),
   ];
 
   return (
@@ -67,27 +70,31 @@ export default function Header() {
             <TreePine className="h-5 w-5" />
           </span>
           <span className="font-display text-xl font-black tracking-tight text-camp-pine-dark">
-            Ami Secret
+            {t('brand')}
           </span>
         </Link>
 
         {!auth?.user && (
-          <Link
-            to="/login"
-            className="rounded-full border-2 border-camp-pine/30 bg-white/60 px-4 py-1.5 text-sm font-extrabold text-camp-pine transition hover:border-camp-pine"
-          >
-            Se connecter
-          </Link>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <Link
+              to="/login"
+              className="rounded-full border-2 border-camp-pine/30 bg-white/60 px-4 py-1.5 text-sm font-extrabold text-camp-pine transition hover:border-camp-pine"
+            >
+              {t('nav.login')}
+            </Link>
+          </div>
         )}
 
         {auth?.user && (
           <div className="flex items-center gap-2">
+            <LanguageSwitcher />
             {isMobileDevice() && (
               <button
                 type="button"
                 onClick={() => window.dispatchEvent(new Event(OPEN_TUTORIAL_EVENT))}
-                aria-label="Aide — revoir le tutoriel"
-                title="Aide"
+                aria-label={t('nav.helpLabel')}
+                title={t('nav.help')}
                 className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-camp-bark/15 bg-white/60 text-camp-pine transition hover:border-camp-pine/40"
               >
                 <CircleHelp className="h-5 w-5" />
@@ -137,7 +144,7 @@ export default function Header() {
                     className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold text-camp-berry hover:bg-camp-berry/10"
                   >
                     <LogOut className="h-4 w-4" />
-                    Se déconnecter
+                    {t('nav.logout')}
                   </button>
                 </motion.div>
               )}

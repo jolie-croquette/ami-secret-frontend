@@ -1,5 +1,7 @@
 import { useContext, useEffect, useRef, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
+import { useNavigate } from '@/i18n/router';
 import { AnimatePresence, motion } from 'motion/react';
 import { Bell, Gift, Sparkles, Inbox, UserMinus, BellOff, Camera } from 'lucide-react';
 import { AuthContext } from '@/context/AuthContext';
@@ -16,19 +18,20 @@ const ICONS: Record<NotificationType, typeof Bell> = {
   'gift-photo': Camera,
 };
 
-/** Date relative compacte en français (« à l'instant », « il y a 5 min »…). */
-function relativeTime(iso: string): string {
+/** Date relative compacte (« à l'instant », « il y a 5 min » / « 5 min ago »…). */
+function relativeTime(iso: string, t: TFunction): string {
   const diff = Date.now() - new Date(iso).getTime();
   const min = Math.floor(diff / 60_000);
-  if (min < 1) return "à l'instant";
-  if (min < 60) return `il y a ${min} min`;
+  if (min < 1) return t('notifications.justNow');
+  if (min < 60) return t('notifications.minutesAgo', { count: min });
   const h = Math.floor(min / 60);
-  if (h < 24) return `il y a ${h} h`;
+  if (h < 24) return t('notifications.hoursAgo', { count: h });
   const d = Math.floor(h / 24);
-  return `il y a ${d} j`;
+  return t('notifications.daysAgo', { count: d });
 }
 
 export default function NotificationBell() {
+  const { t, i18n } = useTranslation();
   const auth = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -47,13 +50,14 @@ export default function NotificationBell() {
     }
   }, []);
 
-  // Premier chargement + sondage périodique.
+  // Premier chargement + sondage périodique. Rechargé au changement de langue :
+  // l'API renvoie les titres dans la langue demandée.
   useEffect(() => {
     if (!auth?.user) return;
     void refresh();
     const id = window.setInterval(() => void refresh(), POLL_MS);
     return () => window.clearInterval(id);
-  }, [auth?.user, refresh]);
+  }, [auth?.user, refresh, i18n.language]);
 
   // Fermeture au clic extérieur / Échap.
   useEffect(() => {
@@ -94,7 +98,7 @@ export default function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => void toggle()}
-        aria-label="Notifications"
+        aria-label={t('notifications.title')}
         aria-haspopup="menu"
         aria-expanded={open}
         className="relative flex h-10 w-10 items-center justify-center rounded-full border-2 border-camp-bark/15 bg-white/60 text-camp-pine-dark transition hover:border-camp-pine/40"
@@ -118,13 +122,13 @@ export default function NotificationBell() {
             className="card-sign absolute right-0 mt-2 w-80 max-w-[85vw] overflow-hidden p-1.5"
           >
             <p className="px-3 py-2 font-display text-sm font-black text-camp-pine-dark">
-              Notifications
+              {t('notifications.title')}
             </p>
             <div className="max-h-96 overflow-auto">
               {items.length === 0 ? (
                 <div className="flex flex-col items-center gap-2 px-3 py-8 text-center text-sm text-camp-bark">
                   <BellOff className="h-6 w-6 text-camp-bark/40" />
-                  Aucune notification.
+                  {t('notifications.empty')}
                 </div>
               ) : (
                 items.map((n) => {
@@ -143,7 +147,7 @@ export default function NotificationBell() {
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block text-sm font-semibold text-camp-ink">{n.title}</span>
-                        <span className="block text-xs text-camp-bark/70">{relativeTime(n.createdAt)}</span>
+                        <span className="block text-xs text-camp-bark/70">{relativeTime(n.createdAt, t)}</span>
                       </span>
                     </button>
                   );

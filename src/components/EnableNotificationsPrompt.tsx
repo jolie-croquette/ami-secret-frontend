@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { Bell, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '@/context/AuthContext';
 import { pushApi } from '@/api/push';
 import { urlBase64ToUint8Array } from '@/lib/push';
@@ -7,6 +8,7 @@ import { urlBase64ToUint8Array } from '@/lib/push';
 const DISMISS_KEY = 'push-prompt-dismissed';
 
 export default function EnableNotificationsPrompt() {
+  const { t } = useTranslation();
   const auth = useContext(AuthContext);
   const user = auth?.user;
   const [visible, setVisible] = useState(false);
@@ -58,9 +60,9 @@ export default function EnableNotificationsPrompt() {
           <Bell className="h-5 w-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-display font-bold text-camp-pine-dark text-sm">Activer les notifications</p>
+          <p className="font-display font-bold text-camp-pine-dark text-sm">{t('pushPrompt.title')}</p>
           <p className="text-xs text-camp-bark mt-0.5">
-            Reçois une alerte quand quelqu'un t'envoie un message ou que le tirage est fait.
+            {t('pushPrompt.body')}
           </p>
           <button
             type="button"
@@ -68,14 +70,14 @@ export default function EnableNotificationsPrompt() {
             disabled={busy}
             className="mt-2 rounded-lg bg-camp-pine px-3 py-1.5 text-xs font-bold text-camp-cream disabled:opacity-60"
           >
-            {busy ? 'Activation…' : 'Activer'}
+            {busy ? t('pushPrompt.busy') : t('pushPrompt.cta')}
           </button>
         </div>
         <button
           type="button"
           onClick={dismiss}
           disabled={busy}
-          aria-label="Fermer"
+          aria-label={t('actions.close')}
           className="flex-shrink-0 text-camp-bark/50 hover:text-camp-ink"
         >
           <X className="h-5 w-5" />

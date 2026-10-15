@@ -4,6 +4,8 @@
  * normalisation des erreurs en `ApiError`.
  */
 
+import i18n from '@/i18n';
+
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000';
 
 export interface ApiErrorDetail {
@@ -32,6 +34,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     credentials: 'include',
     headers: {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      // L'API traduit ses messages (erreurs, validation) selon cette langue.
+      'Accept-Language': i18n.language === 'en' ? 'en' : 'fr',
       ...options.headers,
     },
   });
@@ -39,7 +43,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const json = await res.json().catch(() => null);
 
   if (!res.ok) {
-    const message = json?.message ?? 'Une erreur est survenue.';
+    const message = json?.message ?? i18n.t('errors.generic');
     throw new ApiError(message, res.status, json?.details);
   }
 

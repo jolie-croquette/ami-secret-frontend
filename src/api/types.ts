@@ -33,6 +33,8 @@ export interface AuthUser {
   isOnboarded?: boolean;
   /** Version de la dernière note de mise à jour vue par l'utilisateur. */
   lastSeenUpdate?: string;
+  /** Langue préférée (fr par défaut). */
+  locale?: 'fr' | 'en';
 }
 
 export type NotificationType = 'message' | 'draw' | 'reveal' | 'removed' | 'gift-photo';
@@ -40,7 +42,10 @@ export type NotificationType = 'message' | 'draw' | 'reveal' | 'removed' | 'gift
 export interface AppNotification {
   _id: string;
   type: NotificationType;
+  /** Titre déjà rendu dans la langue de la requête par l'API. */
   title: string;
+  key?: string;
+  params?: Record<string, string>;
   gameCode?: string;
   link?: string;
   readAt?: string;

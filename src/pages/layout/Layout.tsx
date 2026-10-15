@@ -5,10 +5,12 @@ import UpdateNoteModal from '@/components/UpdateNoteModal'
 import EnableNotificationsPrompt from '@/components/EnableNotificationsPrompt'
 import MobileTutorial from '@/components/MobileTutorial'
 import CompleteProfileModal from '@/components/CompleteProfileModal'
+import LangSync from '@/i18n/LangSync'
 
 export default function Layout() {
   return (
     <>
+      <LangSync />
       <Header />
       <main className="">
         <Outlet />

@@ -1,4 +1,5 @@
 import { Gift, Link as LinkIcon, Tag, Plus, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { WishlistItem } from '@/api/types';
 
 /** Éditeur de liste de souhaits : lignes (titre / lien / prix) ajoutables/retirables. */
@@ -9,6 +10,7 @@ export default function WishlistEditor({
   items: WishlistItem[];
   onChange: (next: WishlistItem[]) => void;
 }) {
+  const { t } = useTranslation('components', { keyPrefix: 'wishlist' });
   const update = (i: number, patch: Partial<WishlistItem>) => {
     onChange(items.map((it, idx) => (idx === i ? { ...it, ...patch } : it)));
   };
@@ -26,14 +28,15 @@ export default function WishlistEditor({
             <Gift className="h-4 w-4 shrink-0 text-camp-pine" />
             <input
               className="field !py-1.5 flex-1"
-              placeholder="Idée de cadeau (ex : tasse à café)"
+              placeholder={t('titlePlaceholder')}
               value={it.title}
               onChange={(e) => update(i, { title: e.target.value })}
             />
             <button
               type="button"
               className="icon-btn icon-btn-danger !h-8 !w-8"
-              title="Retirer"
+              title={t('remove')}
+              aria-label={t('remove')}
               onClick={() => removeAt(i)}
             >
               <X className="h-4 w-4" />
@@ -44,7 +47,7 @@ export default function WishlistEditor({
               <LinkIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-camp-bark/40" />
               <input
                 className="field !py-1.5 pl-9"
-                placeholder="Lien (facultatif)"
+                placeholder={t('urlPlaceholder')}
                 value={it.url ?? ''}
                 onChange={(e) => update(i, { url: e.target.value })}
               />
@@ -53,7 +56,7 @@ export default function WishlistEditor({
               <Tag className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-camp-bark/40" />
               <input
                 className="field !py-1.5 pl-9"
-                placeholder="Prix indicatif (ex : ~25 $)"
+                placeholder={t('pricePlaceholder')}
                 value={it.price ?? ''}
                 onChange={(e) => update(i, { price: e.target.value })}
               />
@@ -62,7 +65,7 @@ export default function WishlistEditor({
         </div>
       ))}
       <button type="button" className="btn-ghost !px-4 !py-2 text-sm" onClick={add}>
-        <Plus className="h-4 w-4" /> Ajouter une idée
+        <Plus className="h-4 w-4" /> {t('add')}
       </button>
     </div>
   );
